@@ -47,6 +47,12 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
           <Link
+            href="/admin"
+            className="hidden md:inline-flex font-sans text-xs tracking-widest uppercase border border-sage/45 text-sage px-4 py-2 hover:border-mist hover:bg-mist hover:text-deep transition-all duration-300"
+          >
+            Admin
+          </Link>
+          <Link
             href="#newsletter"
             className="hidden md:inline-flex font-sans text-xs tracking-widest uppercase border border-mist text-mist px-4 py-2 hover:bg-mist hover:text-deep transition-all duration-300"
           >
@@ -77,6 +83,13 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/admin"
+              onClick={() => setIsOpen(false)}
+              className="mt-2 inline-flex w-fit font-sans text-xs tracking-widest uppercase border border-sage/45 text-sage px-4 py-2 hover:border-mist hover:bg-mist hover:text-deep transition-all duration-300"
+            >
+              Admin
+            </Link>
             <Link
               href="#newsletter"
               onClick={() => setIsOpen(false)}
