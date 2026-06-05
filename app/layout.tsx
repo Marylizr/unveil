@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppChrome>{children}</AppChrome>
         </LanguageProvider>
         <AnalyticsProvider />
+        <Analytics />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
