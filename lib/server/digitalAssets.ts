@@ -4,9 +4,11 @@ import { promises as fs } from "fs";
 import type { Types } from "mongoose";
 import Entitlement from "@/models/Entitlement";
 import Product from "@/models/Product";
+import { cloudinaryAuthenticatedRawUrl } from "@/lib/server/cloudinary";
 
 export type DigitalAssetResult =
   | { status: "ready"; absolutePath: string; filename: string; contentType: string }
+  | { status: "redirect"; url: string }
   | { status: "unauthorized" | "missing" | "unsupported" | "not_protected" };
 
 function hashToken(token: string) {
@@ -38,6 +40,16 @@ function resolveLocalAsset(assetUrl: string) {
   return absolutePath;
 }
 
+function resolveCloudinaryAsset(assetUrl: string) {
+  const prefix = "cloudinary:raw:authenticated:";
+  if (!assetUrl.startsWith(prefix)) return null;
+  const publicId = assetUrl.slice(prefix.length);
+  if (!publicId) return null;
+  return {
+    url: cloudinaryAuthenticatedRawUrl(publicId),
+  };
+}
+
 export async function getProtectedDigitalAsset(productId: string, token: string): Promise<DigitalAssetResult> {
   if (!productId || !token) return { status: "unauthorized" };
 
@@ -54,6 +66,14 @@ export async function getProtectedDigitalAsset(productId: string, token: string)
   if (!product) return { status: "missing" };
   if (!product.isProtectedAsset) return { status: "not_protected" };
   if (!product.digitalAssetUrl) return { status: "missing" };
+
+  const cloudinaryAsset = resolveCloudinaryAsset(product.digitalAssetUrl);
+  if (cloudinaryAsset) {
+    entitlement.downloadCount = (entitlement.downloadCount || 0) + 1;
+    entitlement.lastDownloadedAt = new Date();
+    await entitlement.save();
+    return { status: "redirect", url: cloudinaryAsset.url };
+  }
 
   const absolutePath = resolveLocalAsset(product.digitalAssetUrl);
   if (!absolutePath) return { status: "unsupported" };

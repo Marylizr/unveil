@@ -5,6 +5,7 @@ import { useState } from "react";
 import { adminApi } from "@/lib/admin/adminApi";
 import type { LeadMagnet } from "@/types/content";
 import { useAdminToken } from "./AdminAuthGate";
+import CloudinaryFileUploader from "./CloudinaryFileUploader";
 import CloudinaryImageUploader from "./CloudinaryImageUploader";
 import { MediaPreview } from "./MediaPicker";
 
@@ -73,10 +74,6 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
           <span className="admin-label">Category</span>
           <input className="admin-input" value={form.category || ""} onChange={(e) => setField("category", e.target.value)} required />
         </label>
-        <label className="admin-field">
-          <span className="admin-label">PDF URL</span>
-          <input className="admin-input" value={form.pdfUrl || ""} onChange={(e) => setField("pdfUrl", e.target.value)} required />
-        </label>
         <div className="admin-field admin-field-full">
           <CloudinaryImageUploader
             folderType="lead-magnets"
@@ -102,6 +99,19 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
             value={form.coverImage?.alt || ""}
             onChange={(e) => setField("coverImage", { url: form.coverImage?.url || "", alt: e.target.value })}
           />
+        </label>
+        <div className="admin-field admin-field-full">
+          <CloudinaryFileUploader
+            folderType="lead-magnet-pdfs"
+            value={form.pdfUrl || ""}
+            label="Lead magnet PDF upload"
+            helperText="Upload the public/free PDF delivered after form submission. This URL is stored in the lead magnet PDF URL field."
+            onChange={(url) => setField("pdfUrl", url)}
+          />
+        </div>
+        <label className="admin-field admin-field-full">
+          <span className="admin-label">Manual PDF URL</span>
+          <input className="admin-input" value={form.pdfUrl || ""} onChange={(e) => setField("pdfUrl", e.target.value)} required />
         </label>
       </div>
       </FormSection>

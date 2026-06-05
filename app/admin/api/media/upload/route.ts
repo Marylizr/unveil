@@ -6,12 +6,16 @@ import {
   hasCloudinaryConfig,
   isCloudinaryFolderType,
   uploadImageToCloudinary,
+  uploadRawFileToCloudinary,
 } from "@/lib/server/cloudinary";
+import type { CloudinaryFolderType } from "@/types/media";
 
 export const runtime = "nodejs";
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
+const MAX_PDF_SIZE = 20 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const PDF_FOLDERS = new Set<CloudinaryFolderType>(["lead-magnet-pdfs"]);
 
 function errorResponse(error: string, status: number, details?: string) {
   return NextResponse.json(
@@ -48,6 +52,10 @@ function sniffImageType(buffer: Buffer) {
   return "";
 }
 
+function sniffPdf(buffer: Buffer) {
+  return buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+}
+
 export async function POST(request: NextRequest) {
   if (!requireSession()) {
     return errorResponse("Unauthorized", 401);
@@ -68,7 +76,54 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         "Valid folderType is required",
         400,
-        "Expected folderType to be one of: products, articles, lead-magnets, ebooks, brand."
+        "Expected folderType to be one of: products, articles, lead-magnets, ebooks, brand, lead-magnet-pdfs."
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const isPdfUpload = PDF_FOLDERS.has(folderType);
+
+    if (isPdfUpload) {
+      const rawFolderType = folderType as "lead-magnet-pdfs";
+      if (file.size > MAX_PDF_SIZE) {
+        return errorResponse("PDF must be 20MB or smaller", 413, `Received ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
+      }
+
+      if (file.type !== "application/pdf" && !sniffPdf(buffer)) {
+        return errorResponse("Invalid file type", 400, `Only PDF files are supported. Received ${file.type || "unknown MIME type"}.`);
+      }
+
+      if (!hasCloudinaryConfig()) {
+        return errorResponse(
+          "Cloudinary environment variables are missing",
+          500,
+          "Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
+        );
+      }
+
+      const uploaded = await uploadRawFileToCloudinary({ buffer, folderType: rawFolderType, publicId });
+
+      return NextResponse.json(
+        {
+          success: true,
+          asset: {
+            url: uploaded.secure_url,
+            secureUrl: uploaded.secure_url,
+            publicId: uploaded.public_id,
+            width: uploaded.width,
+            height: uploaded.height,
+            format: uploaded.format || "pdf",
+            bytes: uploaded.bytes,
+            resourceType: uploaded.resource_type,
+            alt: defaultAlt(file, alt),
+            folderType,
+            originalFilename: file.name,
+            optimizedUrl: "",
+            thumbnailUrl: "",
+            createdAt: uploaded.created_at,
+          },
+        },
+        { status: 201 }
       );
     }
 
@@ -76,7 +131,6 @@ export async function POST(request: NextRequest) {
       return errorResponse("Image must be 8MB or smaller", 413, `Received ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
     const detectedType = ALLOWED_TYPES.has(file.type) ? file.type : sniffImageType(buffer);
 
     if (!ALLOWED_TYPES.has(detectedType)) {
@@ -111,6 +165,7 @@ export async function POST(request: NextRequest) {
           resourceType: uploaded.resource_type,
           alt: defaultAlt(file, alt),
           folderType,
+          originalFilename: file.name,
           optimizedUrl: cloudinaryDeliveryUrl(uploaded.public_id, 1200),
           thumbnailUrl: cloudinaryDeliveryUrl(uploaded.public_id, 400),
           createdAt: uploaded.created_at,

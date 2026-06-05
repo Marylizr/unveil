@@ -24,6 +24,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (result.status === "unsupported") {
     return NextResponse.json({ error: "Private storage provider is not connected yet" }, { status: 501 });
   }
+  if (result.status === "redirect") {
+    return NextResponse.redirect(result.url, {
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
   if (result.status !== "ready") {
     return NextResponse.json({ error: "Digital asset is unavailable" }, { status: 404 });
   }

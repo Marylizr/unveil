@@ -203,28 +203,32 @@ export default function ProductForm({ product }: { product?: Product }) {
           <span className="admin-label">Stripe price ID</span>
           <input className="admin-input" value={form.stripePriceId || ""} onChange={(e) => setField("stripePriceId", e.target.value)} />
         </label>
-        <label className="admin-field admin-field-full">
-          <span className="admin-label">Digital asset URL</span>
-          <input className="admin-input" value={form.digitalAssetUrl || ""} onChange={(e) => setField("digitalAssetUrl", e.target.value)} />
-        </label>
-        <div className="admin-field admin-field-full">
-          <DigitalAssetPicker
-            value={form.digitalAssetUrl || ""}
-            helper="Select a private file for future paid/protected delivery. This does not make the file publicly downloadable."
-            onSelect={(asset) => {
-              setField("digitalAssetUrl", asset.assetUrl);
-              setField("isProtectedAsset", true);
-            }}
-          />
-        </div>
-        <label className="admin-check admin-field admin-field-full">
-          <input type="checkbox" checked={!!form.isProtectedAsset} onChange={(e) => setField("isProtectedAsset", e.target.checked)} />
-          Protected paid/private asset
-        </label>
-        <label className="admin-field admin-field-full">
-          <span className="admin-label">Legacy download URL</span>
-          <input className="admin-input" value={form.downloadUrl || ""} onChange={(e) => setField("downloadUrl", e.target.value)} />
-        </label>
+        {form.productType === "digital" && (
+          <>
+            <label className="admin-field admin-field-full">
+              <span className="admin-label">Protected digital asset URL</span>
+              <input className="admin-input" value={form.digitalAssetUrl || ""} onChange={(e) => setField("digitalAssetUrl", e.target.value)} />
+            </label>
+            <div className="admin-field admin-field-full">
+              <DigitalAssetPicker
+                value={form.digitalAssetUrl || ""}
+                helper="Upload or select the protected PDF/file for paid ebook delivery. This does not make the file public."
+                onSelect={(asset) => {
+                  setField("digitalAssetUrl", asset.assetUrl);
+                  setField("isProtectedAsset", true);
+                }}
+              />
+            </div>
+            <label className="admin-check admin-field admin-field-full">
+              <input type="checkbox" checked={!!form.isProtectedAsset} onChange={(e) => setField("isProtectedAsset", e.target.checked)} />
+              Protected paid/private asset
+            </label>
+            <label className="admin-field admin-field-full">
+              <span className="admin-label">Legacy download URL</span>
+              <input className="admin-input" value={form.downloadUrl || ""} onChange={(e) => setField("downloadUrl", e.target.value)} />
+            </label>
+          </>
+        )}
       </div>
       </FormSection>
 

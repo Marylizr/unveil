@@ -1,6 +1,13 @@
 import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
 
-export type CloudinaryFolderType = "products" | "articles" | "lead-magnets" | "ebooks" | "brand";
+export type CloudinaryFolderType =
+  | "products"
+  | "articles"
+  | "lead-magnets"
+  | "ebooks"
+  | "brand"
+  | "lead-magnet-pdfs"
+  | "digital-assets";
 
 export interface CloudinaryUploadResult {
   secure_url: string;
@@ -35,9 +42,11 @@ interface CloudinarySearchResponse {
 const folderMap: Record<CloudinaryFolderType, string> = {
   products: "unveil/products",
   articles: "unveil/articles",
-  "lead-magnets": "unveil/lead-magnets",
-  ebooks: "unveil/ebooks",
+  "lead-magnets": "unveil/lead-magnets/covers",
+  ebooks: "unveil/ebooks/covers",
   brand: "unveil/brand",
+  "lead-magnet-pdfs": "unveil/lead-magnets/pdfs",
+  "digital-assets": "unveil/digital-assets",
 };
 
 let configured = false;
@@ -127,6 +136,61 @@ export async function uploadImageToCloudinary({
   };
 }
 
+export async function uploadRawFileToCloudinary({
+  buffer,
+  folderType,
+  publicId,
+  authenticated = false,
+}: {
+  buffer: Buffer;
+  folderType: Extract<CloudinaryFolderType, "lead-magnet-pdfs" | "digital-assets">;
+  publicId?: string;
+  authenticated?: boolean;
+}): Promise<CloudinaryUploadResult> {
+  configureCloudinary();
+
+  const options: UploadApiOptions = {
+    folder: cloudinaryFolder(folderType),
+    resource_type: "raw",
+    type: authenticated ? "authenticated" : "upload",
+    overwrite: Boolean(publicId),
+    unique_filename: !publicId,
+    use_filename: false,
+    invalidate: Boolean(publicId),
+  };
+
+  if (publicId) {
+    options.public_id = publicId;
+  }
+
+  const response = await new Promise<UploadApiResponse>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      if (!result) {
+        reject(new Error("Cloudinary upload did not return a result."));
+        return;
+      }
+      resolve(result);
+    });
+
+    stream.end(buffer);
+  });
+
+  return {
+    secure_url: response.secure_url,
+    public_id: response.public_id,
+    width: response.width || 0,
+    height: response.height || 0,
+    format: response.format,
+    bytes: response.bytes,
+    resource_type: response.resource_type,
+    created_at: response.created_at,
+  };
+}
+
 export async function listCloudinaryImages(maxResults = 100): Promise<CloudinaryListedAsset[]> {
   configureCloudinary();
 
@@ -148,6 +212,27 @@ export async function listCloudinaryImages(maxResults = 100): Promise<Cloudinary
   }));
 }
 
+export async function listCloudinaryRawFiles(folderType: Extract<CloudinaryFolderType, "digital-assets">, maxResults = 100): Promise<CloudinaryListedAsset[]> {
+  configureCloudinary();
+
+  const search = cloudinary.search
+    .expression(`folder:${cloudinaryFolder(folderType)} AND resource_type:raw`)
+    .sort_by("created_at", "desc")
+    .max_results(maxResults);
+  const response = (await search.execute()) as CloudinarySearchResponse;
+
+  return (response.resources || []).map((resource) => ({
+    secure_url: resource.secure_url,
+    public_id: resource.public_id,
+    width: resource.width || 0,
+    height: resource.height || 0,
+    format: resource.format,
+    bytes: resource.bytes,
+    resource_type: resource.resource_type,
+    created_at: resource.created_at,
+  }));
+}
+
 export function cloudinaryDeliveryUrl(publicId: string, width: number) {
   configureCloudinary();
 
@@ -162,5 +247,16 @@ export function cloudinaryDeliveryUrl(publicId: string, width: number) {
         crop: "limit",
       },
     ],
+  });
+}
+
+export function cloudinaryAuthenticatedRawUrl(publicId: string) {
+  configureCloudinary();
+
+  return cloudinary.url(publicId, {
+    secure: true,
+    resource_type: "raw",
+    type: "authenticated",
+    sign_url: true,
   });
 }

@@ -19,7 +19,14 @@ export interface MediaAsset {
   folderType?: CloudinaryFolderType;
 }
 
-export type CloudinaryFolderType = "products" | "articles" | "lead-magnets" | "ebooks" | "brand";
+export type CloudinaryFolderType =
+  | "products"
+  | "articles"
+  | "lead-magnets"
+  | "ebooks"
+  | "brand"
+  | "lead-magnet-pdfs"
+  | "digital-assets";
 
 export interface CloudinaryUploadAsset {
   url: string;
@@ -32,6 +39,7 @@ export interface CloudinaryUploadAsset {
   resourceType: string;
   alt: string;
   folderType: CloudinaryFolderType;
+  originalFilename?: string;
   optimizedUrl: string;
   thumbnailUrl: string;
   createdAt: string;

@@ -47,8 +47,8 @@ export default function DigitalAssetPicker({
       setAssets((current) => [asset, ...current]);
       setMessage("Uploaded.");
       onSelect(asset);
-    } catch {
-      setMessage("Upload failed. Use PDF, EPUB, ZIP, or binary files up to 50MB.");
+    } catch (error) {
+      setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
     } finally {
       setIsUploading(false);
     }
