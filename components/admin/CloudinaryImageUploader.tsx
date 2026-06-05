@@ -36,8 +36,8 @@ export default function CloudinaryImageUploader({
       onChange(asset.optimizedUrl || asset.secureUrl || asset.url);
       setAltText("");
       setMessage("Uploaded to Cloudinary.");
-    } catch {
-      setMessage("Upload failed. Use JPG, PNG, WEBP, or AVIF up to 8MB.");
+    } catch (error) {
+      setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
     } finally {
       setIsUploading(false);
     }

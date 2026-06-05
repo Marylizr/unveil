@@ -6,7 +6,7 @@ import { adminApi } from "@/lib/admin/adminApi";
 import type { LeadMagnet } from "@/types/content";
 import { useAdminToken } from "./AdminAuthGate";
 import CloudinaryImageUploader from "./CloudinaryImageUploader";
-import MediaPicker, { MediaPreview } from "./MediaPicker";
+import { MediaPreview } from "./MediaPicker";
 
 const blankLeadMagnet: Partial<LeadMagnet> = {
   title: "",
@@ -85,15 +85,6 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
             helperText="Upload a production lead magnet cover to Cloudinary."
             alt={form.coverImage?.alt || form.title || ""}
             onChange={(url) => setField("coverImage", { url, alt: form.coverImage?.alt || form.title || "" })}
-          />
-        </div>
-        <div className="admin-field admin-field-full">
-          <MediaPicker
-            label="Cover image picker"
-            folderType="lead-magnets"
-            value={form.coverImage?.url || ""}
-            helper="Upload or reuse a cover image for this lead magnet."
-            onSelect={(asset) => setField("coverImage", { url: asset.url, alt: asset.alt || form.title || "" })}
           />
         </div>
         <div className="admin-field">

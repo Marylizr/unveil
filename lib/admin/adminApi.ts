@@ -49,7 +49,16 @@ export const adminApi = {
         throw new Error("Unauthorized");
       }
 
-      if (!response.ok) throw new Error(`Media upload failed: ${response.status}`);
+      if (!response.ok) {
+        const fallback = `Media upload failed: ${response.status}`;
+        try {
+          const error = (await response.json()) as { error?: string; details?: string };
+          throw new Error(error.details || error.error || fallback);
+        } catch (error) {
+          if (error instanceof Error && error.message !== fallback) throw error;
+          throw new Error(fallback);
+        }
+      }
       const result = (await response.json()) as { asset: CloudinaryUploadAsset };
       const asset = result.asset;
       return {

@@ -6,7 +6,7 @@ import { adminApi } from "@/lib/admin/adminApi";
 import type { BlogArticle } from "@/types/content";
 import { useAdminToken } from "./AdminAuthGate";
 import CloudinaryImageUploader from "./CloudinaryImageUploader";
-import MediaPicker, { MediaPreview } from "./MediaPicker";
+import { MediaPreview } from "./MediaPicker";
 
 const categories = [
   "Male Hygiene",
@@ -126,15 +126,6 @@ export default function BlogForm({ article }: { article?: BlogArticle }) {
             helperText="Upload a production article cover to Cloudinary."
             alt={form.coverImage?.alt || form.title?.en || ""}
             onChange={(url) => setField("coverImage", { url, alt: form.coverImage?.alt || form.title?.en || "" })}
-          />
-        </div>
-        <div className="admin-field admin-field-full">
-          <MediaPicker
-            label="Cover image picker"
-            folderType="articles"
-            value={form.coverImage?.url || ""}
-            helper="Upload or reuse an editorial image for this article cover."
-            onSelect={(asset) => setField("coverImage", { url: asset.url, alt: asset.alt || form.title?.en || "" })}
           />
         </div>
         <div className="admin-field">

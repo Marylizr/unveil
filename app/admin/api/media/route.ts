@@ -54,29 +54,35 @@ export async function GET() {
   }
 
   if (hasCloudinaryConfig()) {
-    const assets = await listCloudinaryImages();
-    return NextResponse.json(
-      assets.map((asset) => ({
-        id: asset.public_id,
-        url: cloudinaryDeliveryUrl(asset.public_id, 1200),
-        secureUrl: asset.secure_url,
-        optimizedUrl: cloudinaryDeliveryUrl(asset.public_id, 1200),
-        thumbnailUrl: cloudinaryDeliveryUrl(asset.public_id, 400),
-        publicId: asset.public_id,
-        filename: asset.public_id.split("/").pop() || asset.public_id,
-        originalName: asset.public_id.split("/").pop() || asset.public_id,
-        alt: asset.public_id.split("/").pop()?.replace(/[-_]+/g, " ") || "UNVEIL media asset",
-        contentType: `image/${asset.format}`,
-        size: asset.bytes,
-        createdAt: asset.created_at,
-        width: asset.width,
-        height: asset.height,
-        format: asset.format,
-        bytes: asset.bytes,
-        resourceType: asset.resource_type,
-        folderType: folderTypeFromPublicId(asset.public_id),
-      }))
-    );
+    try {
+      const assets = await listCloudinaryImages();
+      return NextResponse.json(
+        assets.map((asset) => ({
+          id: asset.public_id,
+          url: cloudinaryDeliveryUrl(asset.public_id, 1200),
+          secureUrl: asset.secure_url,
+          optimizedUrl: cloudinaryDeliveryUrl(asset.public_id, 1200),
+          thumbnailUrl: cloudinaryDeliveryUrl(asset.public_id, 400),
+          publicId: asset.public_id,
+          filename: asset.public_id.split("/").pop() || asset.public_id,
+          originalName: asset.public_id.split("/").pop() || asset.public_id,
+          alt: asset.public_id.split("/").pop()?.replace(/[-_]+/g, " ") || "UNVEIL media asset",
+          contentType: `image/${asset.format}`,
+          size: asset.bytes,
+          createdAt: asset.created_at,
+          width: asset.width,
+          height: asset.height,
+          format: asset.format,
+          bytes: asset.bytes,
+          resourceType: asset.resource_type,
+          folderType: folderTypeFromPublicId(asset.public_id),
+        }))
+      );
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[admin-media] Cloudinary list failed", error);
+      }
+    }
   }
 
   const assets = await readManifest();
