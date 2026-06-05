@@ -1,0 +1,56 @@
+# Environment variables
+.env
+.env.local
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+.next-build/
+out/
+.vercel/
+.netlify/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# System/log files
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tsconfig.tsbuildinfo
+
+# Local AI/editor configs
+.claude/
+
+# Private digital products
+private/digital-assets/*
+!private/digital-assets/.gitkeep
+!private/digital-assets/README.md
+private/cms-media.json
+ebooks/
+
+# Design/source identity assets kept local only
+identidad/
+
+# Design/source files
+*.ai
+*.psd
+*.indd
+*.idlk
+
+# Large raw media/source files
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Temporary files
+*.tmp

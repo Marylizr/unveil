@@ -1,0 +1,115 @@
+export const salesProducts = {
+  "the-modern-man-code": {
+    title: "The Modern Man Code",
+    slug: "the-modern-man-code",
+    price: 39,
+    currency: "EUR",
+    image: "/sales/modern-man-code.png",
+    description: "A premium digital guide to body literacy, emotional intelligence, hygiene, and refined masculine self-care.",
+    audience: [
+      "Men who want a calmer framework for self-care and intimacy education.",
+      "Readers who prefer discreet, thoughtful guidance over hype.",
+      "Anyone building confidence through knowledge, routines, and emotional maturity.",
+    ],
+    teaches: [
+      "Body literacy and daily care foundations",
+      "Emotional regulation and self-respect",
+      "Communication, confidence, and responsible intimacy education",
+      "How to approach masculine self-care without pressure or performance culture",
+    ],
+    benefits: [
+      "A structured education-first framework",
+      "Private reflection prompts and routines",
+      "A discreet language for sensitive topics",
+    ],
+    chapters: [
+      "Body literacy before performance",
+      "Hygiene as self-respect",
+      "The nervous system and confidence",
+      "Communication and emotional maturity",
+      "Building a sustainable self-care code",
+    ],
+    included: ["PDF ebook", "Private download access after purchase", "Responsible-use notes", "Future library access placeholder"],
+    faq: [
+      ["Is this medical advice?", "No. It is educational wellness content and does not replace professional medical or mental health support."],
+      ["Is checkout available now?", "Not yet. Checkout will open after payment infrastructure is connected and tested."],
+      ["Is the content explicit?", "No. UNVEIL uses discreet, educational language focused on health, literacy, and self-care."],
+    ],
+  },
+  "understanding-female-pleasure": {
+    title: "Understanding Female Pleasure",
+    slug: "understanding-female-pleasure",
+    price: 29,
+    currency: "EUR",
+    image: "/sales/understanding-female-pleasure.png",
+    description: "A refined educational guide to communication, anatomy literacy, emotional safety, and attentive intimacy.",
+    audience: [
+      "Men who want to become more attentive, informed, and communicative partners.",
+      "Readers who value consent, care, and emotional intelligence.",
+      "Couples seeking better language for comfort, trust, and connection.",
+    ],
+    teaches: [
+      "Foundations of anatomy literacy without explicit framing",
+      "Consent, pacing, and emotional safety",
+      "How communication shapes trust and confidence",
+      "Why curiosity and listening matter more than scripts",
+    ],
+    benefits: [
+      "Clear education without vulgarity",
+      "Better questions and calmer conversations",
+      "A respectful framework for shared wellbeing",
+    ],
+    chapters: [
+      "Pleasure as communication",
+      "The role of safety and trust",
+      "Anatomy literacy with discretion",
+      "Listening, pacing, and repair",
+      "Building mutual confidence",
+    ],
+    included: ["PDF guide", "Private download access after purchase", "Conversation prompts", "Responsible-use notes"],
+    faq: [
+      ["Is this explicit?", "No. The guide is educational, respectful, and written for wellness and communication."],
+      ["Who is it for?", "It is for adults who want to learn with maturity, consent, and care."],
+      ["When can I buy it?", "Checkout is being prepared and will open after final payment testing."],
+    ],
+  },
+  "the-art-of-connection": {
+    title: "The Art of Connection",
+    slug: "the-art-of-connection",
+    price: 19,
+    currency: "EUR",
+    image: "/sales/the-art-of-connection.png",
+    description: "A concise digital guide to presence, communication, confidence, and emotionally intelligent dating.",
+    audience: [
+      "Men who want to communicate with more calm and clarity.",
+      "Readers who want connection without manipulation or performance advice.",
+      "Anyone refining confidence through honesty, presence, and respect.",
+    ],
+    teaches: [
+      "How to build presence without pressure",
+      "Communication habits that create trust",
+      "Emotional intelligence in dating and relationships",
+      "Repair, boundaries, and mature self-expression",
+    ],
+    benefits: [
+      "Practical prompts for conversations",
+      "A non-performative confidence framework",
+      "Clear language for consent and boundaries",
+    ],
+    chapters: [
+      "Presence before technique",
+      "The quiet confidence of clarity",
+      "Consent and emotional maturity",
+      "Repair and honest communication",
+      "Connection as a daily practice",
+    ],
+    included: ["PDF guide", "Private download access after purchase", "Reflection prompts", "Responsible-use notes"],
+    faq: [
+      ["Is this dating manipulation advice?", "No. UNVEIL does not teach coercive or pickup-style tactics."],
+      ["Is it suitable for a global audience?", "Yes. The tone is discreet, educational, and internationally minded."],
+      ["Is checkout active?", "No. This page is ready for Stripe, but payment is intentionally disabled for now."],
+    ],
+  },
+} as const;
+
+export type SalesProductSlug = keyof typeof salesProducts;
