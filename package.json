@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "dev:fresh": "rm -rf .next && next dev -p 3000",
-    "build": "NEXT_DIST_DIR=.next-build next build",
-    "start": "NEXT_DIST_DIR=.next-build next start",
+    "build": "next build",
+    "start": "next start",
     "server": "API_PORT=3002 tsx watch server/index.ts",
     "seed": "tsx server/seed.ts",
     "dev:all": "concurrently \"npm run dev:fresh\" \"npm run server\""

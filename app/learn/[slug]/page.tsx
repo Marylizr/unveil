@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BlogArticle from "@/components/blog/BlogArticle";
-import { getBlogArticleBySlug } from "@/lib/api";
 import { articleFallbackImage } from "@/lib/brandAssets";
+import { getFallbackBlogArticle } from "@/lib/fallbackContent";
 import { withShareMetadata } from "@/lib/seo";
+import { connectToDatabase } from "@/lib/server/db";
+import { getBlogArticleBySlug } from "@/server/services/blogService";
 import type { BlogArticle as BlogArticleType } from "@/types/content";
+
+export const dynamic = "force-dynamic";
 
 interface ArticlePageProps {
   params: { slug: string };
 }
 
-async function loadArticle(slug: string) {
+async function loadArticle(slug: string): Promise<BlogArticleType | null> {
   try {
-    return await getBlogArticleBySlug(slug);
+    await connectToDatabase();
+    const article = await getBlogArticleBySlug(slug);
+    return (article as BlogArticleType | null) || getFallbackBlogArticle(slug) || null;
   } catch {
-    return null;
+    return getFallbackBlogArticle(slug) || null;
   }
 }
 

@@ -33,7 +33,7 @@ export function normalizePublishingFields(input: Record<string, unknown>) {
 
 export function publicPublishedQuery() {
   return {
-    isPublished: true,
+    $or: [{ isPublished: true }, { publicationStatus: "published" }],
     publicationStatus: { $ne: "archived" },
   };
 }
