@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin/adminApi";
 import type { BlogArticle } from "@/types/content";
 import { useAdminToken } from "./AdminAuthGate";
+import CloudinaryImageUploader from "./CloudinaryImageUploader";
 import MediaPicker, { MediaPreview } from "./MediaPicker";
 
 const categories = [
@@ -118,8 +119,19 @@ export default function BlogForm({ article }: { article?: BlogArticle }) {
           <textarea className="admin-textarea admin-textarea-excerpt" value={form.excerpt?.en || ""} onChange={(e) => setLocalized("excerpt", e.target.value)} required />
         </label>
         <div className="admin-field admin-field-full">
+          <CloudinaryImageUploader
+            folderType="articles"
+            value={form.coverImage?.url || ""}
+            label="Cloudinary article cover upload"
+            helperText="Upload a production article cover to Cloudinary."
+            alt={form.coverImage?.alt || form.title?.en || ""}
+            onChange={(url) => setField("coverImage", { url, alt: form.coverImage?.alt || form.title?.en || "" })}
+          />
+        </div>
+        <div className="admin-field admin-field-full">
           <MediaPicker
             label="Cover image picker"
+            folderType="articles"
             value={form.coverImage?.url || ""}
             helper="Upload or reuse an editorial image for this article cover."
             onSelect={(asset) => setField("coverImage", { url: asset.url, alt: asset.alt || form.title?.en || "" })}

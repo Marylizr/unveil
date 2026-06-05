@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/admin/adminApi";
-import type { MediaAsset } from "@/types/media";
+import type { CloudinaryFolderType, MediaAsset } from "@/types/media";
 
 export function MediaPreview({ asset, label }: { asset?: { url: string; alt?: string }; label?: string }) {
   if (!asset?.url) {
@@ -26,12 +26,14 @@ export default function MediaPicker({
   onSelect,
   allowMultiple = false,
   helper,
+  folderType = "brand",
 }: {
   label?: string;
   value?: string;
   onSelect: (asset: MediaAsset) => void;
   allowMultiple?: boolean;
   helper?: string;
+  folderType?: CloudinaryFolderType;
 }) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [query, setQuery] = useState("");
@@ -59,13 +61,13 @@ export default function MediaPicker({
     setIsUploading(true);
     setMessage("Uploading...");
     try {
-      const asset = await adminApi.media.upload(file, alt);
+      const asset = await adminApi.media.upload(file, alt, folderType);
       setAssets((current) => [asset, ...current]);
       setAlt("");
-      setMessage("Uploaded.");
+      setMessage("Uploaded to Cloudinary.");
       onSelect(asset);
     } catch {
-      setMessage("Upload failed. Use JPG, PNG, WEBP, or GIF up to 5MB.");
+      setMessage("Upload failed. Use JPG, PNG, WEBP, or AVIF up to 8MB.");
     } finally {
       setIsUploading(false);
     }
@@ -87,7 +89,7 @@ export default function MediaPicker({
           <input
             className="admin-input"
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             disabled={isUploading}
             onChange={(event) => upload(event.target.files?.[0])}
           />

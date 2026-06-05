@@ -2,7 +2,15 @@ const { withSentryConfig } = require("@sentry/nextjs");
 
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  images: {},
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 const shouldEnableSentryBuild =

@@ -7,7 +7,7 @@
 # Dependencies
 node_modules/
 
-# Next.js
+# Next.js / deployment
 .next/
 .next-build/
 out/
@@ -30,27 +30,34 @@ tsconfig.tsbuildinfo
 # Local AI/editor configs
 .claude/
 
-# Private digital products
+# Local design/source folders
+identidad/
+ebooks/
+
+# Private digital products / CMS data
+private/cms-media.json
 private/digital-assets/*
 !private/digital-assets/.gitkeep
 !private/digital-assets/README.md
-private/cms-media.json
-ebooks/
-
-# Design/source identity assets kept local only
-identidad/
 
 # Design/source files
 *.ai
 *.psd
 *.indd
 *.idlk
+*.sketch
+*.fig
 
 # Large raw media/source files
 *.mp4
 *.mov
 *.avi
 *.mkv
+*.webm
+
+# Archives
+*.zip
+*.rar
 
 # Temporary files
 *.tmp

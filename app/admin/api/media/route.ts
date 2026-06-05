@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin/session";
+import { cloudinaryDeliveryUrl, hasCloudinaryConfig, listCloudinaryImages } from "@/lib/server/cloudinary";
 import type { MediaAsset } from "@/types/media";
 
 export const runtime = "nodejs";
@@ -39,9 +40,43 @@ async function writeManifest(assets: MediaAsset[]) {
   await writeFile(manifestPath, JSON.stringify(assets, null, 2));
 }
 
+function folderTypeFromPublicId(publicId: string): MediaAsset["folderType"] {
+  const segment = publicId.split("/")[1];
+  if (segment === "products" || segment === "articles" || segment === "lead-magnets" || segment === "ebooks" || segment === "brand") {
+    return segment;
+  }
+  return undefined;
+}
+
 export async function GET() {
   if (!requireSession()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (hasCloudinaryConfig()) {
+    const assets = await listCloudinaryImages();
+    return NextResponse.json(
+      assets.map((asset) => ({
+        id: asset.public_id,
+        url: cloudinaryDeliveryUrl(asset.public_id, 1200),
+        secureUrl: asset.secure_url,
+        optimizedUrl: cloudinaryDeliveryUrl(asset.public_id, 1200),
+        thumbnailUrl: cloudinaryDeliveryUrl(asset.public_id, 400),
+        publicId: asset.public_id,
+        filename: asset.public_id.split("/").pop() || asset.public_id,
+        originalName: asset.public_id.split("/").pop() || asset.public_id,
+        alt: asset.public_id.split("/").pop()?.replace(/[-_]+/g, " ") || "UNVEIL media asset",
+        contentType: `image/${asset.format}`,
+        size: asset.bytes,
+        createdAt: asset.created_at,
+        width: asset.width,
+        height: asset.height,
+        format: asset.format,
+        bytes: asset.bytes,
+        resourceType: asset.resource_type,
+        folderType: folderTypeFromPublicId(asset.public_id),
+      }))
+    );
   }
 
   const assets = await readManifest();

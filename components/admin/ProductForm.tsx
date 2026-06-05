@@ -5,6 +5,7 @@ import { useState } from "react";
 import { adminApi } from "@/lib/admin/adminApi";
 import type { Product } from "@/types/content";
 import { useAdminToken } from "./AdminAuthGate";
+import CloudinaryImageUploader from "./CloudinaryImageUploader";
 import DigitalAssetPicker from "./DigitalAssetPicker";
 import MediaPicker, { MediaPreview } from "./MediaPicker";
 
@@ -241,8 +242,35 @@ export default function ProductForm({ product }: { product?: Product }) {
       <FormSection title="Images" description="Use the media library to build a reusable product gallery.">
       <div className="admin-field-grid">
         <div className="admin-field admin-field-full">
+          <CloudinaryImageUploader
+            folderType={form.productType === "digital" ? "ebooks" : "products"}
+            value={form.images?.[0]?.url || ""}
+            label="Cloudinary product image upload"
+            helperText="Upload a production image to Cloudinary and add it to this product gallery."
+            alt={form.title?.en || "UNVEIL product image"}
+            onChange={(url) => {
+              setForm((current) => {
+                const images = current.images || [];
+                if (images.some((image) => image.url === url)) return current;
+                return {
+                  ...current,
+                  images: [
+                    ...images,
+                    {
+                      url,
+                      alt: current.title?.en || "UNVEIL product image",
+                      position: images.length,
+                    },
+                  ],
+                };
+              });
+            }}
+          />
+        </div>
+        <div className="admin-field admin-field-full">
           <MediaPicker
             label="Product gallery picker"
+            folderType={form.productType === "digital" ? "ebooks" : "products"}
             allowMultiple
             helper="Upload or select images. Selected images are added to the product gallery."
             onSelect={(asset) => {

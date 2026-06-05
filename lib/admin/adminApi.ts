@@ -3,7 +3,7 @@
 import type { AdminEntitlement, AdminOrder, AdminStats, Lead } from "@/types/admin";
 import type { BlogArticle, LeadMagnet, Product } from "@/types/content";
 import type { PrivateDigitalAsset } from "@/types/digitalAsset";
-import type { MediaAsset } from "@/types/media";
+import type { CloudinaryFolderType, CloudinaryUploadAsset, MediaAsset } from "@/types/media";
 
 async function adminRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/admin/api${path}`, {
@@ -31,12 +31,14 @@ export const adminApi = {
   },
   media: {
     list: () => adminRequest<MediaAsset[]>("/media"),
-    upload: async (file: File, alt?: string) => {
+    upload: async (file: File, alt?: string, folderType: CloudinaryFolderType = "brand", publicId?: string) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("alt", alt || "");
+      formData.append("folderType", folderType);
+      if (publicId) formData.append("publicId", publicId);
 
-      const response = await fetch("/admin/api/media", {
+      const response = await fetch("/admin/api/media/upload", {
         method: "POST",
         credentials: "same-origin",
         body: formData,
@@ -48,7 +50,28 @@ export const adminApi = {
       }
 
       if (!response.ok) throw new Error(`Media upload failed: ${response.status}`);
-      return response.json() as Promise<MediaAsset>;
+      const result = (await response.json()) as { asset: CloudinaryUploadAsset };
+      const asset = result.asset;
+      return {
+        id: asset.publicId,
+        url: asset.optimizedUrl || asset.secureUrl,
+        secureUrl: asset.secureUrl,
+        optimizedUrl: asset.optimizedUrl,
+        thumbnailUrl: asset.thumbnailUrl,
+        publicId: asset.publicId,
+        filename: asset.publicId.split("/").pop() || asset.publicId,
+        originalName: file.name,
+        alt: asset.alt,
+        contentType: file.type,
+        size: asset.bytes,
+        createdAt: asset.createdAt,
+        width: asset.width,
+        height: asset.height,
+        format: asset.format,
+        bytes: asset.bytes,
+        resourceType: asset.resourceType,
+        folderType: asset.folderType,
+      } satisfies MediaAsset;
     },
   },
   digitalAssets: {
