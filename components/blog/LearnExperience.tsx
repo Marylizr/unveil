@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import BlogCard from "@/components/blog/BlogCard";
 import BlogGrid from "@/components/blog/BlogGrid";
 import CategoryFilter from "@/components/ecommerce/CategoryFilter";
@@ -75,19 +76,29 @@ export default function LearnExperience({ initialArticles }: { initialArticles: 
         <div className="mx-auto max-w-7xl px-6 py-16 md:py-24">
           {featuredArticle && (
             <section className="mb-20">
-              <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-[0.78fr_1.22fr] md:items-end">
-                <div>
-                  <p className="mb-3 font-sans text-xs uppercase tracking-[0.3em] text-gold">Latest education</p>
-                  <h2 className="font-serif text-5xl leading-tight text-deep md:text-6xl">New from the journal</h2>
+              <div className="mb-12 grid grid-cols-1 gap-8 md:mb-16 lg:grid-cols-[minmax(0,0.64fr)_minmax(320px,0.36fr)] lg:items-center">
+                <div className="max-w-4xl">
+                  <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-gold">Featured journal</p>
+                  <h2 className="font-serif text-5xl leading-[0.98] text-deep sm:text-6xl lg:text-7xl">Authority through education</h2>
                 </div>
-                <p className="max-w-xl font-sans text-sm leading-relaxed text-[#5F6648] md:justify-self-end">
-                  The newest published articles appear first, with real covers, categories, and reading details from the editorial database.
-                </p>
+                <div className="max-w-[420px] lg:justify-self-end lg:pt-10">
+                  <p className="font-sans text-sm leading-relaxed text-[#5F6648]">
+                    A calm reading path for body literacy, intimate hygiene, emotional intelligence, and grounded self-care.
+                  </p>
+                  <Link
+                    href="#journal-articles"
+                    className="mt-6 inline-flex rounded-full border border-olive/25 px-6 py-3 font-sans text-xs uppercase tracking-widest text-olive transition-colors hover:border-gold hover:text-deep"
+                  >
+                    View all articles →
+                  </Link>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-[clamp(1rem,2vw,1.5rem)] lg:grid-cols-[1.35fr_0.75fr]">
-                <BlogCard article={featuredArticle} large tone="light" />
+              <div className="grid grid-cols-1 items-start gap-[clamp(1rem,2vw,1.5rem)] lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.78fr)]">
+                <div>
+                  <BlogCard article={featuredArticle} large tone="light" />
+                </div>
                 {secondaryArticles.length > 0 && (
-                  <div className="grid gap-[clamp(1rem,2vw,1.5rem)]">
+                  <div className="grid gap-[clamp(1rem,2vw,1.5rem)] lg:pt-8">
                     {secondaryArticles.map((article) => (
                       <BlogCard key={article._id} article={article} tone="light" />
                     ))}
@@ -99,11 +110,11 @@ export default function LearnExperience({ initialArticles }: { initialArticles: 
 
           {!featuredArticle && (
             <section className="mb-20 rounded-[36px] bg-[#E8E8E2] p-[clamp(1.5rem,4vw,3.5rem)] soft-paper">
-                <p className="mb-3 font-sans text-xs uppercase tracking-[0.3em] text-gold">Featured journal</p>
-                <h2 className="font-serif text-5xl leading-tight text-deep md:text-6xl">Start with context, not pressure</h2>
-                <p className="mt-5 max-w-lg font-sans text-sm leading-relaxed text-[#5F6648]">
-                  UNVEIL teaches the foundations first: what the body does, why care matters, and how to approach wellbeing with discretion.
-                </p>
+              <p className="mb-3 font-sans text-xs uppercase tracking-[0.3em] text-gold">Featured journal</p>
+              <h2 className="font-serif text-5xl leading-tight text-deep md:text-6xl">Start with context, not pressure</h2>
+              <p className="mt-5 max-w-lg font-sans text-sm leading-relaxed text-[#5F6648]">
+                UNVEIL teaches the foundations first: what the body does, why care matters, and how to approach wellbeing with discretion.
+              </p>
             </section>
           )}
 
@@ -116,14 +127,18 @@ export default function LearnExperience({ initialArticles }: { initialArticles: 
           )}
 
           {filtered.length > 0 ? (
-            <BlogGrid articles={filtered} tone="light" />
-          ) : (
+            <div id="journal-articles">
+              <BlogGrid articles={filtered} tone="light" />
+            </div>
+          ) : filtersActive ? (
             <div className="rounded-[32px] bg-[#E8E8E2] px-6 py-24 text-center">
               <p className="font-serif text-4xl text-deep">No articles published here yet.</p>
               <p className="mx-auto mt-4 max-w-md font-sans text-sm leading-relaxed text-[#5F6648]">
                 UNVEIL publishes slowly and deliberately. This topic will be built with care.
               </p>
             </div>
+          ) : (
+            <div id="journal-articles" />
           )}
 
           <section className="mt-16 rounded-[32px] border border-[rgba(77,80,57,0.14)] bg-white p-5 md:p-6" aria-label="Journal filters">

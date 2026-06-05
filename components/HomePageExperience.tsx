@@ -10,7 +10,7 @@ import HomeProductCarousel from "@/components/marketing/HomeProductCarousel";
 import LeadMagnetSection from "@/components/marketing/LeadMagnetSection";
 import WhatUnveilTeaches from "@/components/marketing/WhatUnveilTeaches";
 import { useLanguage } from "@/context/LanguageContext";
-import type { BlogArticle, Product } from "@/types/content";
+import type { BlogArticle, LeadMagnet, Product } from "@/types/content";
 
 function useReveal() {
   useEffect(() => {
@@ -33,9 +33,11 @@ function useReveal() {
 export default function HomePageExperience({
   initialProducts,
   initialPosts,
+  initialLeadMagnets,
 }: {
   initialProducts: Product[];
   initialPosts: BlogArticle[];
+  initialLeadMagnets: LeadMagnet[];
 }) {
   const { language, t } = useLanguage();
   const products = initialProducts;
@@ -126,7 +128,7 @@ export default function HomePageExperience({
         </div>
       </section>
 
-      <LeadMagnetSection source="homepage-lead-magnet" />
+      <LeadMagnetSection source="homepage-lead-magnet" initialLeadMagnets={initialLeadMagnets} />
       <HomeNewsletterSplit />
       <HomeProductCarousel products={products} />
     </>

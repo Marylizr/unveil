@@ -2,8 +2,9 @@ import HomePageExperience from "@/components/HomePageExperience";
 import { fallbackBlogArticles, fallbackProducts } from "@/lib/fallbackContent";
 import { connectToDatabase } from "@/lib/server/db";
 import { listBlogArticles } from "@/server/services/blogService";
+import { listLeadMagnets } from "@/server/services/leadMagnetService";
 import { listProducts } from "@/server/services/productService";
-import type { BlogArticle, Product } from "@/types/content";
+import type { BlogArticle, LeadMagnet, Product } from "@/types/content";
 
 export const dynamic = "force-dynamic";
 
@@ -21,26 +22,28 @@ function withFeaturedFallback(posts: BlogArticle[]) {
   return [...posts, ...fallbackFill].slice(0, 3);
 }
 
-async function loadHomeContent(): Promise<{ products: Product[]; posts: BlogArticle[] }> {
+async function loadHomeContent(): Promise<{ products: Product[]; posts: BlogArticle[]; leadMagnets: LeadMagnet[] }> {
   try {
     await connectToDatabase();
-    const [products, posts] = await Promise.all([listProducts(), listBlogArticles()]);
-    const publishedPosts = posts as BlogArticle[];
+    const [products, posts, leadMagnets] = await Promise.all([listProducts(), listBlogArticles(), listLeadMagnets()]);
+    const publishedPosts = posts as unknown as BlogArticle[];
 
     return {
-      products: products.length > 0 ? (products as Product[]) : fallbackProducts,
+      products: products.length > 0 ? (products as unknown as Product[]) : fallbackProducts,
       posts: withFeaturedFallback(publishedPosts),
+      leadMagnets: leadMagnets as unknown as LeadMagnet[],
     };
   } catch {
     return {
       products: fallbackProducts,
       posts: fallbackBlogArticles,
+      leadMagnets: [],
     };
   }
 }
 
 export default async function HomePage() {
-  const { products, posts } = await loadHomeContent();
+  const { products, posts, leadMagnets } = await loadHomeContent();
 
-  return <HomePageExperience initialProducts={products} initialPosts={posts} />;
+  return <HomePageExperience initialProducts={products} initialPosts={posts} initialLeadMagnets={leadMagnets} />;
 }

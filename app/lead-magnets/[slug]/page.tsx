@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import LeadMagnetCard from "@/components/marketing/LeadMagnetCard";
-import { getLeadMagnetBySlug } from "@/lib/api";
 import { leadMagnetFallbackImage } from "@/lib/brandAssets";
+import { getFallbackLeadMagnet } from "@/lib/fallbackContent";
+import { connectToDatabase } from "@/lib/server/db";
 import { withShareMetadata } from "@/lib/seo";
+import { getLeadMagnetBySlug } from "@/server/services/leadMagnetService";
+import type { LeadMagnet } from "@/types/content";
 
 interface LeadMagnetPageProps {
   params: { slug: string };
@@ -11,9 +14,11 @@ interface LeadMagnetPageProps {
 
 async function loadLeadMagnet(slug: string) {
   try {
-    return await getLeadMagnetBySlug(slug);
+    await connectToDatabase();
+    const leadMagnet = (await getLeadMagnetBySlug(slug)) as unknown as LeadMagnet | null;
+    return leadMagnet || getFallbackLeadMagnet(slug) || null;
   } catch {
-    return null;
+    return getFallbackLeadMagnet(slug) || null;
   }
 }
 

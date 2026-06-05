@@ -5,18 +5,26 @@ import { getLeadMagnets } from "@/lib/api";
 import type { LeadMagnet } from "@/types/content";
 import LeadMagnetCard from "./LeadMagnetCard";
 
-export default function LeadMagnetSection({ source = "homepage-lead-magnet" }: { source?: string }) {
-  const [leadMagnets, setLeadMagnets] = useState<LeadMagnet[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+export default function LeadMagnetSection({
+  source = "homepage-lead-magnet",
+  initialLeadMagnets,
+}: {
+  source?: string;
+  initialLeadMagnets?: LeadMagnet[];
+}) {
+  const [leadMagnets, setLeadMagnets] = useState<LeadMagnet[]>(initialLeadMagnets || []);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(initialLeadMagnets ? "ready" : "loading");
 
   useEffect(() => {
+    if (initialLeadMagnets) return;
+
     getLeadMagnets()
       .then((data) => {
         setLeadMagnets(data);
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
-  }, []);
+  }, [initialLeadMagnets]);
 
   if (status === "error" || (status === "ready" && leadMagnets.length === 0)) return null;
 
