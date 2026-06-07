@@ -8,7 +8,7 @@ import {
   getFallbackProduct,
 } from "@/lib/fallbackContent";
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+export const API_BASE_URL = process.env.API_PUBLIC_URL || "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -75,7 +75,7 @@ export function getLeadMagnetDownload(slug: string, token: string) {
 }
 
 export function createLead(payload: LeadPayload) {
-  return fetch(`${API_BASE_URL}/api/leads`, {
+  return fetch("/api/leads", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
