@@ -17,6 +17,7 @@ export default function CloudinaryFileUploader({
   helperText,
   accept = "application/pdf,.pdf",
   publicId,
+  onUploadStateChange,
 }: {
   folderType: Extract<CloudinaryFolderType, "lead-magnet-pdfs">;
   value?: string;
@@ -25,6 +26,7 @@ export default function CloudinaryFileUploader({
   helperText?: string;
   accept?: string;
   publicId?: string;
+  onUploadStateChange?: (isUploading: boolean) => void;
 }) {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -38,26 +40,30 @@ export default function CloudinaryFileUploader({
     setFileSize(file.size);
 
     if (file.type !== "application/pdf") {
+      onUploadStateChange?.(false);
       setMessage(`Upload failed: only PDF files are supported. Selected ${file.type || "unknown file type"}.`);
       return;
     }
 
     if (!publicId) {
+      onUploadStateChange?.(false);
       setMessage("Upload failed: add a normalized lead magnet slug before uploading the PDF.");
       return;
     }
 
     setIsUploading(true);
+    onUploadStateChange?.(true);
     setMessage("Uploading PDF...");
 
     try {
       const asset = await adminApi.media.upload(file, file.name, folderType, publicId);
       onChange(asset.secureUrl || asset.url);
-      setMessage("PDF uploaded.");
+      setMessage("PDF uploaded successfully.");
     } catch (error) {
       setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
     } finally {
       setIsUploading(false);
+      onUploadStateChange?.(false);
     }
   }
 
@@ -86,14 +92,22 @@ export default function CloudinaryFileUploader({
 
       {value ? (
         <div className="admin-media-empty admin-media-empty-wide">
-          <span>{value.startsWith("https://") ? value : "PDF uploaded."}</span>
+          <span>{value.startsWith("https://") ? value : "PDF uploaded successfully."}</span>
           <a className="admin-secondary" href={value} target="_blank" rel="noreferrer">
             Open PDF
           </a>
         </div>
       ) : (
         <div className="admin-media-empty admin-media-empty-wide">
-          <span>No file uploaded.</span>
+          <span>
+            {isUploading
+              ? "Uploading PDF..."
+              : fileName
+                ? message.startsWith("Upload failed")
+                  ? "PDF upload failed."
+                  : "PDF selected. Waiting for upload."
+                : "No file uploaded."}
+          </span>
         </div>
       )}
     </div>

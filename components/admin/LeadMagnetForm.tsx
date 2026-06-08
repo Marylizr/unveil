@@ -61,6 +61,7 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
   const { token } = useAdminToken();
   const [form, setForm] = useState<Partial<LeadMagnet>>(leadMagnet || blankLeadMagnet);
   const [message, setMessage] = useState("");
+  const [isPdfUploading, setIsPdfUploading] = useState(false);
 
   function setField<K extends keyof LeadMagnet>(key: K, value: LeadMagnet[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -68,9 +69,21 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isPdfUploading) {
+      setMessage("Please wait for the PDF upload to finish.");
+      return;
+    }
+
+    const pdfUrl = (form.pdfUrl || "").trim();
+    if (!pdfUrl) {
+      setMessage("Upload a PDF or paste a full HTTPS PDF URL before saving.");
+      return;
+    }
+
     setMessage("Saving...");
     try {
-      const payload = { ...form, slug: slugifyLeadMagnet(form.slug || "", form.title || "") };
+      const payload = { ...form, pdfUrl, slug: slugifyLeadMagnet(form.slug || "", form.title || "") };
       setForm(payload);
       if (leadMagnet?._id) {
         await adminApi.leadMagnets.update(token, leadMagnet._id, payload);
@@ -79,8 +92,8 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
         const created = await adminApi.leadMagnets.create(token, payload);
         router.push(`/admin/lead-magnets/${created._id}`);
       }
-    } catch {
-      setMessage("Could not save. Check required fields and token.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save. Check required fields and token.");
     }
   }
 
@@ -146,11 +159,12 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
             helperText="Upload the public/free PDF delivered after form submission. The Cloudinary public ID uses the normalized lead magnet slug and the returned secure URL is stored below."
             publicId={leadMagnetPdfPublicId(form.slug || "", form.title || "")}
             onChange={(url) => setField("pdfUrl", url)}
+            onUploadStateChange={setIsPdfUploading}
           />
         </div>
         <label className="admin-field admin-field-full">
           <span className="admin-label">Manual PDF URL</span>
-          <input className="admin-input" value={form.pdfUrl || ""} onChange={(e) => setField("pdfUrl", e.target.value)} required />
+          <input className="admin-input" value={form.pdfUrl || ""} onChange={(e) => setField("pdfUrl", e.target.value)} />
         </label>
       </div>
       </FormSection>
