@@ -5,6 +5,19 @@ import type { BlogArticle, LeadMagnet, Product } from "@/types/content";
 import type { PrivateDigitalAsset } from "@/types/digitalAsset";
 import type { CloudinaryFolderType, CloudinaryUploadAsset, MediaAsset } from "@/types/media";
 
+type CloudinarySignedUpload = {
+  success: true;
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+  publicId: string;
+  resourceType: "raw";
+  overwrite: true;
+  invalidate: true;
+};
+
 async function adminRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/admin/api${path}`, {
     ...init,
@@ -40,6 +53,12 @@ export const adminApi = {
   },
   media: {
     list: () => adminRequest<MediaAsset[]>("/media"),
+    signUpload: (payload: { slug: string; folder: "unveil/lead-magnets/pdfs"; resourceType: "raw"; publicId: string }) =>
+      adminRequest<CloudinarySignedUpload>("/media/sign-upload", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+
     upload: async (file: File, alt?: string, folderType: CloudinaryFolderType = "brand", publicId?: string) => {
       const formData = new FormData();
       formData.append("file", file);

@@ -4,6 +4,15 @@ import { useState } from "react";
 import { adminApi } from "@/lib/admin/adminApi";
 import type { CloudinaryFolderType } from "@/types/media";
 
+const LEAD_MAGNET_PDF_FOLDER = "unveil/lead-magnets/pdfs" as const;
+
+type CloudinaryRawUploadResponse = {
+  secure_url?: string;
+  public_id?: string;
+  resource_type?: string;
+  error?: { message?: string };
+};
+
 function formatSize(size: number) {
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
@@ -33,31 +42,82 @@ export default function CloudinaryFileUploader({
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState("");
 
+  function cleanCloudinaryError(text: string) {
+    try {
+      const parsed = JSON.parse(text) as CloudinaryRawUploadResponse;
+      return parsed.error?.message || "Cloudinary upload failed.";
+    } catch {
+      return text.trim() || "Cloudinary upload failed.";
+    }
+  }
+
+  async function uploadDirectlyToCloudinary(file: File) {
+    if (!publicId) throw new Error("Add a normalized lead magnet slug before uploading the PDF.");
+    const slug = publicId.replace(/\.pdf$/i, "");
+    const signed = await adminApi.media.signUpload({
+      slug,
+      folder: LEAD_MAGNET_PDF_FOLDER,
+      resourceType: "raw",
+      publicId,
+    });
+
+    setMessage("Uploading to Cloudinary...");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signed.apiKey);
+    formData.append("timestamp", String(signed.timestamp));
+    formData.append("signature", signed.signature);
+    formData.append("folder", signed.folder);
+    formData.append("public_id", signed.publicId);
+    formData.append("overwrite", String(signed.overwrite));
+    formData.append("invalidate", String(signed.invalidate));
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signed.cloudName)}/${signed.resourceType}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      throw new Error(cleanCloudinaryError(responseText));
+    }
+
+    let result: CloudinaryRawUploadResponse;
+    try {
+      result = JSON.parse(responseText) as CloudinaryRawUploadResponse;
+    } catch {
+      throw new Error("Cloudinary returned an unexpected response. Please try again.");
+    }
+
+    if (!result.secure_url) {
+      throw new Error(result.error?.message || "Cloudinary did not return a secure PDF URL.");
+    }
+
+    return result.secure_url;
+  }
+
   async function upload(file?: File) {
     if (!file) return;
 
     setFileName(file.name);
     setFileSize(file.size);
 
-    if (file.type !== "application/pdf") {
+    const hasPdfExtension = file.name.toLowerCase().endsWith(".pdf");
+    if (file.type !== "application/pdf" || !hasPdfExtension) {
       onUploadStateChange?.(false);
-      setMessage(`Upload failed: only PDF files are supported. Selected ${file.type || "unknown file type"}.`);
-      return;
-    }
-
-    if (!publicId) {
-      onUploadStateChange?.(false);
-      setMessage("Upload failed: add a normalized lead magnet slug before uploading the PDF.");
+      setMessage(
+        `Upload failed: only PDF files are supported. Selected ${file.type || "unknown file type"}${hasPdfExtension ? "" : " without a .pdf extension"}.`
+      );
       return;
     }
 
     setIsUploading(true);
     onUploadStateChange?.(true);
-    setMessage("Uploading PDF...");
+    setMessage("Requesting upload signature...");
 
     try {
-      const asset = await adminApi.media.upload(file, file.name, folderType, publicId);
-      onChange(asset.secureUrl || asset.url);
+      const secureUrl = await uploadDirectlyToCloudinary(file);
+      onChange(secureUrl);
       setMessage("PDF uploaded successfully.");
     } catch (error) {
       setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
@@ -87,7 +147,7 @@ export default function CloudinaryFileUploader({
           onChange={(event) => upload(event.target.files?.[0])}
         />
         {fileName && <small>Selected: {fileName}{fileSize ? ` · ${formatSize(fileSize)}` : ""}</small>}
-        {isUploading && <small>Uploading PDF to Cloudinary...</small>}
+        {isUploading && <small>{message}</small>}
       </label>
 
       {value ? (
