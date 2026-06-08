@@ -1,14 +1,36 @@
-import { booleanValue, optionalString, sanitizeString, slugify, type ValidationResult } from "./shared";
+import { booleanValue, sanitizeString, slugify, type ValidationResult } from "./shared";
 
 const PUBLISHING_STATUSES = ["draft", "scheduled", "published", "archived"] as const;
+
+export function normalizeLeadMagnetSlug(value: string, title = "") {
+  const normalizedTitle = slugify(title);
+  const normalizedValue = slugify(value);
+  if (normalizedTitle === "the-7-hygiene-mistakes-most-men-make") return "7-hygiene-mistakes";
+  if (normalizedValue === "the-7-hygiene-mistakes-most-men-make") return "7-hygiene-mistakes";
+  if (normalizedValue === "hygiene-mistakes" && normalizedTitle.includes("7-hygiene-mistakes")) {
+    return "7-hygiene-mistakes";
+  }
+  return normalizedValue || normalizedTitle;
+}
+
+export function normalizeLeadMagnetPdfUrl(value: string) {
+  const pdfUrl = sanitizeString(value);
+  if (!pdfUrl) return "";
+  if (/^https?:\/\//i.test(pdfUrl) || pdfUrl.startsWith("/")) return pdfUrl;
+
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) return "";
+
+  return `https://res.cloudinary.com/${cloudName}/raw/upload/${pdfUrl.replace(/^\/+/, "")}`;
+}
 
 export function validateLeadMagnetInput(body: unknown, partial = false): ValidationResult<Record<string, unknown>> {
   const source = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const errors: string[] = [];
   const title = sanitizeString(source.title);
-  const slug = sanitizeString(source.slug) || (title ? slugify(title) : "");
+  const slug = normalizeLeadMagnetSlug(sanitizeString(source.slug), title);
   const description = sanitizeString(source.description);
-  const pdfUrl = sanitizeString(source.pdfUrl);
+  const pdfUrl = normalizeLeadMagnetPdfUrl(sanitizeString(source.pdfUrl));
   const category = sanitizeString(source.category);
   const coverImageSource =
     typeof source.coverImage === "object" && source.coverImage !== null

@@ -9,6 +9,25 @@ import CloudinaryFileUploader from "./CloudinaryFileUploader";
 import CloudinaryImageUploader from "./CloudinaryImageUploader";
 import { MediaPreview } from "./MediaPicker";
 
+function slugifyLeadMagnet(value: string, title = "") {
+  const base = (value || title)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const titleSlug = title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (titleSlug === "the-7-hygiene-mistakes-most-men-make") return "7-hygiene-mistakes";
+  if (base === "the-7-hygiene-mistakes-most-men-make") return "7-hygiene-mistakes";
+  if (base === "hygiene-mistakes" && titleSlug.includes("7-hygiene-mistakes")) return "7-hygiene-mistakes";
+  return base;
+}
+
 const blankLeadMagnet: Partial<LeadMagnet> = {
   title: "",
   slug: "",
@@ -46,11 +65,13 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
     event.preventDefault();
     setMessage("Saving...");
     try {
+      const payload = { ...form, slug: slugifyLeadMagnet(form.slug || "", form.title || "") };
+      setForm(payload);
       if (leadMagnet?._id) {
-        await adminApi.leadMagnets.update(token, leadMagnet._id, form);
+        await adminApi.leadMagnets.update(token, leadMagnet._id, payload);
         setMessage("Saved.");
       } else {
-        const created = await adminApi.leadMagnets.create(token, form);
+        const created = await adminApi.leadMagnets.create(token, payload);
         router.push(`/admin/lead-magnets/${created._id}`);
       }
     } catch {
@@ -64,11 +85,23 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
       <div className="admin-field-grid">
         <label className="admin-field">
           <span className="admin-label">Title</span>
-          <input className="admin-input" value={form.title || ""} onChange={(e) => setField("title", e.target.value)} required />
+          <input
+            className="admin-input"
+            value={form.title || ""}
+            onChange={(e) => {
+              const title = e.target.value;
+              setForm((current) => ({
+                ...current,
+                title,
+                slug: current.slug ? slugifyLeadMagnet(current.slug, title) : slugifyLeadMagnet("", title),
+              }));
+            }}
+            required
+          />
         </label>
         <label className="admin-field">
           <span className="admin-label">Slug</span>
-          <input className="admin-input" value={form.slug || ""} onChange={(e) => setField("slug", e.target.value)} required />
+          <input className="admin-input" value={form.slug || ""} onChange={(e) => setField("slug", slugifyLeadMagnet(e.target.value, form.title || ""))} required />
         </label>
         <label className="admin-field">
           <span className="admin-label">Category</span>

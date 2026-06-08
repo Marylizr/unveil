@@ -93,6 +93,15 @@ function getPublicApiUrl() {
   return getAppUrl();
 }
 
+function getEmailLogoUrl() {
+  return `${getAppUrl()}/brand/unveil-logo-dark.png`;
+}
+
+function logSequenceEmail(event: string, details: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "production" && process.env.EMAIL_DEBUG !== "true") return;
+  console.info(`[email-sequence:${event}] ${JSON.stringify(details)}`);
+}
+
 function getNextSendDate(step: number) {
   const next = sequence[step];
   if (!next) return undefined;
@@ -115,15 +124,68 @@ function emailHtml(lead: ILead, step: number, downloadUrl?: string) {
   const clickTarget = downloadUrl && step === 1 ? downloadUrl : `${getAppUrl()}${item.href}`;
   const clickUrl = `${getPublicApiUrl()}/api/leads/sequence/click/${encodeURIComponent(token)}?url=${encodeURIComponent(clickTarget)}`;
   const unsubscribeUrl = getUnsubscribeUrl(lead);
+  const logoUrl = getEmailLogoUrl();
+  const eyebrow = step === 1 && downloadUrl ? "Guide access" : "UNVEIL journal";
+  const ctaLabel = step === 1 && downloadUrl ? "Download your guide" : item.cta;
+  const intro = step === 1 && downloadUrl
+    ? "Your email is confirmed. Your requested UNVEIL guide is ready below."
+    : "A discreet educational note from UNVEIL.";
 
   return `
-    <div style="font-family: Georgia, serif; color: #1a2010; line-height: 1.6;">
-      <h1 style="font-weight: 400;">${item.title}</h1>
-      <p>${item.body}</p>
-      <p><a href="${clickUrl}" style="color: #4d5c2a;">${step === 1 && downloadUrl ? "Download your UNVEIL guide" : item.cta}</a></p>
-      <p style="font-size: 13px; color: #4d5c2a;"><a href="${unsubscribeUrl}" style="color: #4d5c2a;">Unsubscribe</a> at any time.</p>
-      <img src="${openUrl}" alt="" width="1" height="1" style="display:block;border:0;" />
-    </div>
+    <!doctype html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${item.subject}</title>
+      </head>
+      <body style="margin:0; padding:0; background:#f3efe5; color:#1a2010;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3efe5; margin:0; padding:0; width:100%;">
+          <tr>
+            <td align="center" style="padding:32px 16px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:620px;">
+                <tr>
+                  <td align="center" style="padding:0 0 18px 0;">
+                    <img src="${logoUrl}" width="168" alt="UNVEIL" style="display:block; width:168px; max-width:168px; height:auto; border:0; outline:none; text-decoration:none; margin:0 auto;" />
+                    <div style="font-family:Arial, Helvetica, sans-serif; font-size:10px; line-height:1.7; letter-spacing:0.24em; text-transform:uppercase; color:#626b4a; padding-top:12px;">UNVEIL · Male wellness education</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#fffdf7; border:1px solid #d8cfbd; border-radius:24px; padding:0; overflow:hidden;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="padding:42px 34px 34px 34px;">
+                          <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:1.5; letter-spacing:0.22em; text-transform:uppercase; color:#b28e5e; padding-bottom:18px;">${eyebrow}</div>
+                          <h1 style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:42px; line-height:1.04; font-weight:400; color:#1a2010;">${item.title}</h1>
+                          <p style="margin:22px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.75; color:#626b4a;">${intro}</p>
+                          <p style="margin:14px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.75; color:#626b4a;">${item.body}</p>
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 0 0;">
+                            <tr>
+                              <td align="center" bgcolor="#18210f" style="border-radius:999px;">
+                                <a href="${clickUrl}" style="display:inline-block; padding:15px 26px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1; letter-spacing:0.16em; text-transform:uppercase; text-decoration:none; color:#fffdf7; background:#18210f; border-radius:999px;">${ctaLabel}</a>
+                              </td>
+                            </tr>
+                          </table>
+                          <p style="margin:26px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; color:#626b4a;">If the button does not work, copy and paste this link into your browser:</p>
+                          <p style="margin:8px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; word-break:break-all; color:#626b4a;"><a href="${clickUrl}" style="color:#4d5c2a; text-decoration:underline;">${clickUrl}</a></p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="border-top:1px solid #d8cfbd; padding:22px 34px 28px 34px; background:#fbf8ef;">
+                          <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; color:#626b4a;">UNVEIL sends discreet educational wellness notes. You can unsubscribe at any time.</p>
+                          <p style="margin:12px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:1.7; color:#626b4a;"><a href="${unsubscribeUrl}" style="color:#4d5c2a; text-decoration:underline;">Unsubscribe</a> · <a href="${getAppUrl()}/privacy" style="color:#4d5c2a; text-decoration:underline;">Privacy Policy</a></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <img src="${openUrl}" alt="" width="1" height="1" style="display:block;border:0;width:1px;height:1px;" />
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `;
 }
 

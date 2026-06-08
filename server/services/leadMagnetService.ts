@@ -1,5 +1,6 @@
 import LeadMagnet from "../../models/LeadMagnet";
 import { serializeAdminLeadMagnet, serializeLeadMagnet } from "../serializers/leadMagnetSerializer";
+import { normalizeLeadMagnetSlug } from "../validators/leadMagnetValidator";
 import { normalizePublishingFields, publicPublishedQuery } from "./publishingWorkflow";
 
 export async function listLeadMagnets() {
@@ -17,17 +18,36 @@ export async function getAdminLeadMagnetById(id: string) {
   return leadMagnet ? serializeAdminLeadMagnet(leadMagnet) : null;
 }
 
+export async function findLeadMagnetDocumentBySlug(slug: string, query: Record<string, unknown> = {}) {
+  const normalizedSlug = normalizeLeadMagnetSlug(slug);
+  const directMatch = await LeadMagnet.findOne({ slug: normalizedSlug, ...query });
+  if (directMatch) return directMatch;
+
+  const candidates = await LeadMagnet.find(query);
+  return (
+    candidates.find((candidate) => normalizeLeadMagnetSlug(candidate.slug || "", candidate.title || "") === normalizedSlug) || null
+  );
+}
+
 export async function getLeadMagnetBySlug(slug: string) {
-  const leadMagnet = await LeadMagnet.findOne({ slug, ...publicPublishedQuery() });
+  const leadMagnet = await findLeadMagnetDocumentBySlug(slug, publicPublishedQuery());
   return leadMagnet ? serializeLeadMagnet(leadMagnet) : null;
 }
 
+function normalizeLeadMagnetInput(input: Record<string, unknown>) {
+  const normalized = normalizePublishingFields(input) as Record<string, unknown>;
+  const title = typeof normalized.title === "string" ? normalized.title : "";
+  const slug = typeof normalized.slug === "string" ? normalized.slug : "";
+  if (slug || title) normalized.slug = normalizeLeadMagnetSlug(slug, title);
+  return normalized;
+}
+
 export async function createLeadMagnet(input: Record<string, unknown>) {
-  return serializeAdminLeadMagnet(await LeadMagnet.create(normalizePublishingFields(input)));
+  return serializeAdminLeadMagnet(await LeadMagnet.create(normalizeLeadMagnetInput(input)));
 }
 
 export async function updateLeadMagnet(id: string, input: Record<string, unknown>) {
-  const leadMagnet = await LeadMagnet.findByIdAndUpdate(id, normalizePublishingFields(input), { new: true, runValidators: true });
+  const leadMagnet = await LeadMagnet.findByIdAndUpdate(id, normalizeLeadMagnetInput(input), { new: true, runValidators: true });
   return leadMagnet ? serializeAdminLeadMagnet(leadMagnet) : null;
 }
 

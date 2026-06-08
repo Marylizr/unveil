@@ -1,3 +1,4 @@
+import { normalizeLeadMagnetSlug } from "./leadMagnetValidator";
 import { sanitizeString, stringArray, type ValidationResult } from "./shared";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,7 +21,7 @@ export function validateLeadInput(body: unknown): ValidationResult<Record<string
     country: sanitizeString(source.country),
     interests: stringArray(source.interests),
     source: sanitizeString(source.source) || "newsletter",
-    requestedLeadMagnetSlug: sanitizeString(source.requestedLeadMagnetSlug),
+    requestedLeadMagnetSlug: normalizeLeadMagnetSlug(sanitizeString(source.requestedLeadMagnetSlug)),
     language,
     consent: true,
     consentedAt: new Date(),
