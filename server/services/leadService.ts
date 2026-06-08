@@ -15,6 +15,12 @@ function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function safeCompare(value: string, expected: string) {
+  const valueBuffer = Buffer.from(value);
+  const expectedBuffer = Buffer.from(expected);
+  return valueBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(valueBuffer, expectedBuffer);
+}
+
 function getTokenSecret() {
   if (process.env.LEAD_TOKEN_SECRET) return process.env.LEAD_TOKEN_SECRET;
   if (process.env.NODE_ENV === "production") {
@@ -30,14 +36,38 @@ function createSignedUnsubscribeToken(lead: { _id: unknown; email: string }) {
 }
 
 function isValidUnsubscribeToken(token: string, lead: { _id: unknown; email: string }) {
-  const expected = createSignedUnsubscribeToken(lead);
-  const tokenBuffer = Buffer.from(token);
-  const expectedBuffer = Buffer.from(expected);
-  return tokenBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+  return safeCompare(token, createSignedUnsubscribeToken(lead));
+}
+
+function createSignedDownloadToken(lead: { _id: unknown; email: string }, slug: string) {
+  const id = String(lead._id);
+  const nonce = crypto.randomBytes(24).toString("hex");
+  const signature = crypto.createHmac("sha256", getTokenSecret()).update(`${id}:${lead.email}:${slug}:${nonce}`).digest("hex");
+  return `${id}.${nonce}.${signature}`;
+}
+
+function parseSignedDownloadToken(token: string) {
+  const [id, nonce, signature] = token.split(".");
+  if (!id || !nonce || !signature) return null;
+  return { id, nonce, signature };
+}
+
+function isValidSignedDownloadToken(token: string, lead: { _id: unknown; email: string }, slug: string) {
+  const parsed = parseSignedDownloadToken(token);
+  if (!parsed || parsed.id !== String(lead._id)) return false;
+  const expectedSignature = crypto
+    .createHmac("sha256", getTokenSecret())
+    .update(`${parsed.id}:${lead.email}:${slug}:${parsed.nonce}`)
+    .digest("hex");
+  return safeCompare(parsed.signature, expectedSignature);
 }
 
 function getConfirmationUrl(token: string) {
   return `${getAppUrl()}/confirm-email?token=${encodeURIComponent(token)}`;
+}
+
+function getEmailLogoUrl() {
+  return `${getAppUrl()}/brand/unveil-logo-dark.png`;
 }
 
 function getUnsubscribeUrl(lead: { _id: unknown; email: string }) {
@@ -50,6 +80,8 @@ function getDownloadUrl(slug: string, token: string) {
 }
 
 function confirmationEmailHtml(url: string) {
+  const logoUrl = getEmailLogoUrl();
+
   return `
     <!doctype html>
     <html>
@@ -65,8 +97,8 @@ function confirmationEmailHtml(url: string) {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:620px;">
                 <tr>
                   <td align="center" style="padding:0 0 18px 0;">
-                    <div style="font-family:Georgia, 'Times New Roman', serif; font-size:34px; line-height:1; letter-spacing:0.04em; color:#1a2010;">UNVEIL</div>
-                    <div style="font-family:Arial, Helvetica, sans-serif; font-size:10px; line-height:1.7; letter-spacing:0.24em; text-transform:uppercase; color:#626b4a; padding-top:10px;">Male wellness education</div>
+                    <img src="${logoUrl}" width="168" alt="UNVEIL" style="display:block; width:168px; max-width:168px; height:auto; border:0; outline:none; text-decoration:none; margin:0 auto;" />
+                    <div style="font-family:Arial, Helvetica, sans-serif; font-size:10px; line-height:1.7; letter-spacing:0.24em; text-transform:uppercase; color:#626b4a; padding-top:12px;">UNVEIL · Male wellness education</div>
                   </td>
                 </tr>
                 <tr>
@@ -172,7 +204,7 @@ export async function confirmLead(token: string) {
   lead.confirmationTokenExpiresAt = undefined;
   lead.welcomeSequenceStatus = "active";
   lead.emailSequenceStep = 0;
-  const downloadToken = lead.requestedLeadMagnetSlug ? createRawToken() : "";
+  const downloadToken = lead.requestedLeadMagnetSlug ? createSignedDownloadToken(lead, lead.requestedLeadMagnetSlug) : "";
   if (downloadToken) {
     lead.downloadTokenHash = hashToken(downloadToken);
     lead.downloadTokenExpiresAt = new Date(Date.now() + DOWNLOAD_TTL_DAYS * 24 * 60 * 60 * 1000);
@@ -222,9 +254,23 @@ export async function unsubscribeLead(token: string) {
 }
 
 export async function getLeadMagnetDownload(slug: string, token: string) {
-  const lead = await Lead.findOne({ downloadTokenHash: hashToken(token) });
+  const tokenHash = hashToken(token);
+  let lead = await Lead.findOne({ downloadTokenHash: tokenHash });
 
-  if (!lead) return { status: "invalid" as const, reason: "token_not_found" as const };
+  if (!lead) {
+    const parsedToken = parseSignedDownloadToken(token);
+    if (!parsedToken) return { status: "invalid" as const, reason: "token_not_found" as const };
+
+    lead = await Lead.findById(parsedToken.id);
+    if (!lead || !isValidSignedDownloadToken(token, lead, slug)) {
+      return { status: "invalid" as const, reason: "token_not_found" as const };
+    }
+
+    if (lead.downloadTokenHash && lead.downloadTokenHash !== tokenHash) {
+      return { status: "invalid" as const, reason: "token_replaced" as const };
+    }
+  }
+
   if (lead.status !== "confirmed") return { status: "invalid" as const, reason: "lead_not_confirmed" as const };
   if (lead.requestedLeadMagnetSlug !== slug) return { status: "invalid" as const, reason: "resource_mismatch" as const };
   if (!lead.downloadTokenExpiresAt || lead.downloadTokenExpiresAt <= new Date()) {
