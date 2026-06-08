@@ -51,12 +51,58 @@ function getDownloadUrl(slug: string, token: string) {
 
 function confirmationEmailHtml(url: string) {
   return `
-    <div style="font-family: Georgia, serif; color: #1a2010; line-height: 1.6;">
-      <h1 style="font-weight: 400;">Confirm your UNVEIL subscription</h1>
-      <p>Thank you for joining UNVEIL. Please confirm your email to receive discreet educational notes on body literacy, hygiene, and modern self-care.</p>
-      <p><a href="${url}" style="color: #4d5c2a;">Confirm my email</a></p>
-      <p style="font-size: 13px; color: #4d5c2a;">If you did not request this, you can ignore this email.</p>
-    </div>
+    <!doctype html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Confirm your UNVEIL subscription</title>
+      </head>
+      <body style="margin:0; padding:0; background:#f3efe5; color:#1a2010;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3efe5; margin:0; padding:0; width:100%;">
+          <tr>
+            <td align="center" style="padding:32px 16px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:620px;">
+                <tr>
+                  <td align="center" style="padding:0 0 18px 0;">
+                    <div style="font-family:Georgia, 'Times New Roman', serif; font-size:34px; line-height:1; letter-spacing:0.04em; color:#1a2010;">UNVEIL</div>
+                    <div style="font-family:Arial, Helvetica, sans-serif; font-size:10px; line-height:1.7; letter-spacing:0.24em; text-transform:uppercase; color:#626b4a; padding-top:10px;">Male wellness education</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background:#fffdf7; border:1px solid #d8cfbd; border-radius:24px; padding:0; overflow:hidden;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="padding:42px 34px 34px 34px;">
+                          <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:1.5; letter-spacing:0.22em; text-transform:uppercase; color:#b28e5e; padding-bottom:18px;">Confirm access</div>
+                          <h1 style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:42px; line-height:1.04; font-weight:400; color:#1a2010;">Confirm your UNVEIL subscription</h1>
+                          <p style="margin:22px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.75; color:#626b4a;">Thank you for joining UNVEIL. Please confirm your email to receive discreet educational notes on body literacy, hygiene, confidence, and modern self-care.</p>
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 0 0;">
+                            <tr>
+                              <td align="center" bgcolor="#18210f" style="border-radius:999px;">
+                                <a href="${url}" style="display:inline-block; padding:15px 26px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1; letter-spacing:0.16em; text-transform:uppercase; text-decoration:none; color:#fffdf7; background:#18210f; border-radius:999px;">Confirm my email</a>
+                              </td>
+                            </tr>
+                          </table>
+                          <p style="margin:26px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; color:#626b4a;">If the button does not work, copy and paste this link into your browser:</p>
+                          <p style="margin:8px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; word-break:break-all; color:#626b4a;"><a href="${url}" style="color:#4d5c2a; text-decoration:underline;">${url}</a></p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="border-top:1px solid #d8cfbd; padding:22px 34px 28px 34px; background:#fbf8ef;">
+                          <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.7; color:#626b4a;">If you did not request this, you can ignore this email. UNVEIL handles sensitive wellness topics with discretion. You can unsubscribe from educational emails at any time after confirming.</p>
+                          <p style="margin:12px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:1.7; color:#626b4a;">Privacy reference: <a href="${getAppUrl()}/privacy" style="color:#4d5c2a; text-decoration:underline;">UNVEIL Privacy Policy</a></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `;
 }
 
@@ -139,7 +185,26 @@ export async function confirmLead(token: string) {
       : undefined;
   await sendSequenceEmail(lead, 1, downloadUrl);
 
-  return { status: "confirmed" as const, lead };
+  let leadMagnetTitle: string | undefined;
+  let downloadError: string | undefined;
+  if (lead.requestedLeadMagnetSlug) {
+    const leadMagnet = await LeadMagnet.findOne({ slug: lead.requestedLeadMagnetSlug, isPublished: true });
+    leadMagnetTitle = leadMagnet?.title;
+    if (!leadMagnet) {
+      downloadError = "The requested lead magnet is not published or could not be found.";
+    } else if (!leadMagnet.pdfUrl) {
+      downloadError = "The requested lead magnet is missing its PDF URL in the CMS.";
+    }
+  }
+
+  return {
+    status: "confirmed" as const,
+    lead,
+    downloadUrl,
+    leadMagnetSlug: lead.requestedLeadMagnetSlug,
+    leadMagnetTitle,
+    downloadError,
+  };
 }
 
 export async function unsubscribeLead(token: string) {
@@ -169,6 +234,7 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
 
   const leadMagnet = await LeadMagnet.findOne({ slug, isPublished: true });
   if (!leadMagnet) return { status: "missing" as const };
+  if (!leadMagnet.pdfUrl) return { status: "no_asset" as const };
 
-  return { status: "ready" as const, pdfUrl: leadMagnet.pdfUrl };
+  return { status: "ready" as const, pdfUrl: leadMagnet.pdfUrl, title: leadMagnet.title };
 }

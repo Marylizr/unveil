@@ -15,11 +15,18 @@ export async function GET(request: Request, { params }: { params: { slug: string
 
     await connectToDatabase();
     const result = await getLeadMagnetDownload(params.slug, validated.value.token);
+    if (result.status === "no_asset") {
+      return NextResponse.json(
+        { error: "This lead magnet is confirmed, but no PDF URL is attached in the CMS. Add a pdfUrl to the lead magnet record." },
+        { status: 500 }
+      );
+    }
+
     if (result.status !== "ready") {
       return NextResponse.json({ error: "Download link is invalid or expired" }, { status: 403 });
     }
 
-    return NextResponse.json({ pdfUrl: result.pdfUrl });
+    return NextResponse.json({ pdfUrl: result.pdfUrl, title: result.title });
   } catch {
     return NextResponse.json({ error: "Failed to prepare download" }, { status: 500 });
   }

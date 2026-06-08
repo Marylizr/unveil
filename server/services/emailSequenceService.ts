@@ -90,7 +90,7 @@ function getUnsubscribeUrl(lead: { _id: unknown; email: string }) {
 }
 
 function getPublicApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || process.env.API_PUBLIC_URL || getAppUrl();
+  return getAppUrl();
 }
 
 function getNextSendDate(step: number) {

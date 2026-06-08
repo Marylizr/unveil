@@ -20,7 +20,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    let message = `Request failed: ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // Keep the status-based message when the response body is not JSON.
+    }
+    throw new Error(message);
   }
 
   return response.json() as Promise<T>;
@@ -69,7 +76,7 @@ export async function getLeadMagnetBySlug(slug: string) {
 }
 
 export function getLeadMagnetDownload(slug: string, token: string) {
-  return request<{ pdfUrl: string }>(
+  return request<{ pdfUrl: string; title?: string }>(
     `/api/lead-magnets/${encodeURIComponent(slug)}/download?token=${encodeURIComponent(token)}`
   );
 }
@@ -86,7 +93,14 @@ export function createLead(payload: LeadPayload) {
 }
 
 export function confirmLeadEmail(token: string) {
-  return request<{ message: string; status: string }>(`/api/leads/confirm?token=${encodeURIComponent(token)}`);
+  return request<{
+    message: string;
+    status: string;
+    downloadUrl?: string;
+    leadMagnetSlug?: string;
+    leadMagnetTitle?: string;
+    downloadError?: string;
+  }>(`/api/leads/confirm?token=${encodeURIComponent(token)}`);
 }
 
 export function unsubscribeLead(token: string) {

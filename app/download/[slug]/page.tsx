@@ -12,6 +12,8 @@ export default function ProtectedDownloadPage() {
   const token = searchParams.get("token") || "";
   const slug = params.slug;
   const [pdfUrl, setPdfUrl] = useState("");
+  const [title, setTitle] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -23,10 +25,14 @@ export default function ProtectedDownloadPage() {
     getLeadMagnetDownload(slug, token)
       .then((result) => {
         setPdfUrl(result.pdfUrl);
+        setTitle(result.title || "UNVEIL guide");
         setStatus("ready");
         trackLeadMagnetDownload({ source: "protected-download", lead_magnet_slug: slug });
       })
-      .catch(() => setStatus("error"));
+      .catch((error) => {
+        setErrorMessage(error instanceof Error ? error.message : "The link may have expired. Please request the guide again to receive fresh access.");
+        setStatus("error");
+      });
   }, [slug, token]);
 
   return (
@@ -40,6 +46,11 @@ export default function ProtectedDownloadPage() {
             <p className="mt-5 font-sans text-sm leading-relaxed text-olive/85">
               This private access link is intended for confirmed subscribers.
             </p>
+            {title && (
+              <p className="mt-5 rounded-2xl border border-olive/15 bg-off-white px-5 py-4 font-sans text-sm text-olive">
+                {title}
+              </p>
+            )}
             <a href={pdfUrl} className="mt-8 inline-flex bg-deep px-6 py-3 font-sans text-xs uppercase tracking-widest text-cream">
               Download PDF
             </a>
@@ -49,7 +60,7 @@ export default function ProtectedDownloadPage() {
           <>
             <h1 className="font-serif text-5xl leading-tight">This download link is unavailable.</h1>
             <p className="mt-5 font-sans text-sm leading-relaxed text-olive/85">
-              The link may have expired. Please request the guide again to receive fresh access.
+              {errorMessage || "The link may have expired. Please request the guide again to receive fresh access."}
             </p>
             <Link href="/" className="mt-8 inline-flex bg-deep px-6 py-3 font-sans text-xs uppercase tracking-widest text-cream">
               Return home

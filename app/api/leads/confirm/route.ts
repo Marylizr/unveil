@@ -19,7 +19,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Confirmation link is invalid or expired" }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Email confirmed", status: result.status });
+    return NextResponse.json({
+      message: "Email confirmed",
+      status: result.status,
+      downloadUrl: result.downloadUrl,
+      leadMagnetSlug: result.leadMagnetSlug,
+      leadMagnetTitle: result.leadMagnetTitle,
+      downloadError: result.downloadError,
+    });
   } catch {
     return NextResponse.json({ error: "Failed to confirm lead" }, { status: 500 });
   }
