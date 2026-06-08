@@ -222,15 +222,15 @@ export async function unsubscribeLead(token: string) {
 }
 
 export async function getLeadMagnetDownload(slug: string, token: string) {
-  const lead = await Lead.findOne({
-    requestedLeadMagnetSlug: slug,
-    downloadTokenHash: hashToken(token),
-    downloadTokenExpiresAt: { $gt: new Date() },
-    status: "confirmed",
-    unsubscribedAt: { $exists: false },
-  });
+  const lead = await Lead.findOne({ downloadTokenHash: hashToken(token) });
 
-  if (!lead) return { status: "invalid" as const };
+  if (!lead) return { status: "invalid" as const, reason: "token_not_found" as const };
+  if (lead.status !== "confirmed") return { status: "invalid" as const, reason: "lead_not_confirmed" as const };
+  if (lead.requestedLeadMagnetSlug !== slug) return { status: "invalid" as const, reason: "resource_mismatch" as const };
+  if (!lead.downloadTokenExpiresAt || lead.downloadTokenExpiresAt <= new Date()) {
+    return { status: "invalid" as const, reason: "token_expired" as const };
+  }
+  if (lead.unsubscribedAt) return { status: "invalid" as const, reason: "lead_unsubscribed" as const };
 
   const leadMagnet = await LeadMagnet.findOne({ slug, isPublished: true });
   if (!leadMagnet) return { status: "missing" as const };

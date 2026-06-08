@@ -23,7 +23,8 @@ export async function GET(request: Request, { params }: { params: { slug: string
     }
 
     if (result.status !== "ready") {
-      return NextResponse.json({ error: "Download link is invalid or expired" }, { status: 403 });
+      const detail = "reason" in result && result.reason ? result.reason : result.status;
+      return NextResponse.json({ error: "Download link is invalid or expired", detail }, { status: 403 });
     }
 
     return NextResponse.json({ pdfUrl: result.pdfUrl, title: result.title });
