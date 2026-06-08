@@ -74,6 +74,30 @@ function logLeadEmail(event: string, details: Record<string, unknown>) {
   console.info(`[lead-email:${event}] ${JSON.stringify(details)}`);
 }
 
+async function checkPublicDeliveryStatus(url: string) {
+  try {
+    const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+    return response.status;
+  } catch {
+    return "unavailable" as const;
+  }
+}
+
+function logProtectedDownloadDecision(details: {
+  leadTokenValid: boolean;
+  leadFound: boolean;
+  leadStatus?: string;
+  slugMatch?: boolean;
+  leadMagnetFound?: boolean;
+  pdfUrlExists?: boolean;
+  pdfUrlIsCloudinaryRaw?: boolean;
+  publicDeliveryStatus?: number | "unavailable" | "not_checked";
+  signedFallbackGenerated?: boolean;
+  finalRedirectMode?: "public" | "signed" | "none";
+}) {
+  logLeadDownloadDebug("protected-download-decision", details);
+}
+
 function getConfirmationUrl(token: string) {
   return `${getAppUrl()}/confirm-email?token=${encodeURIComponent(token)}`;
 }
@@ -330,6 +354,7 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
         leadFound: Boolean(lead),
         reason: "token_not_found",
       });
+      logProtectedDownloadDecision({ leadTokenValid: false, leadFound: Boolean(lead), finalRedirectMode: "none" });
       return { status: "invalid" as const, reason: "token_not_found" as const };
     }
 
@@ -347,6 +372,13 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
         requestedLeadMagnetSlug: lead.requestedLeadMagnetSlug,
         normalizedLeadRequestedSlug: leadRequestedSlug,
         reason: "token_replaced",
+      });
+      logProtectedDownloadDecision({
+        leadTokenValid: false,
+        leadFound: true,
+        leadStatus: lead.status,
+        slugMatch: leadRequestedSlug === normalizedSlug,
+        finalRedirectMode: "none",
       });
       return { status: "invalid" as const, reason: "token_replaced" as const };
     }
@@ -374,11 +406,25 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
           slugMatch: false,
           reason: "resource_mismatch",
         });
+        logProtectedDownloadDecision({
+          leadTokenValid: false,
+          leadFound: true,
+          leadStatus: confirmationLead.status,
+          slugMatch: false,
+          finalRedirectMode: "none",
+        });
         return { status: "invalid" as const, reason: "resource_mismatch" as const };
       }
 
       const confirmationResult = await confirmLead(token);
       if (confirmationResult.status !== "confirmed" || !confirmationResult.downloadUrl) {
+        logProtectedDownloadDecision({
+          leadTokenValid: false,
+          leadFound: true,
+          leadStatus: confirmationResult.status,
+          slugMatch: true,
+          finalRedirectMode: "none",
+        });
         return { status: "invalid" as const, reason: "confirmation_failed" as const };
       }
 
@@ -412,6 +458,7 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
       leadFound: false,
       reason: "token_not_found",
     });
+    logProtectedDownloadDecision({ leadTokenValid: false, leadFound: false, finalRedirectMode: "none" });
     return { status: "invalid" as const, reason: "token_not_found" as const };
   }
 
@@ -438,18 +485,22 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
 
   if (lead.status !== "confirmed") {
     logLeadDownloadDebug("invalid", { ...baseLog, reason: "lead_not_confirmed" });
+    logProtectedDownloadDecision({ leadTokenValid: false, leadFound: true, leadStatus: lead.status, slugMatch, finalRedirectMode: "none" });
     return { status: "invalid" as const, reason: "lead_not_confirmed" as const };
   }
   if (!slugMatch) {
     logLeadDownloadDebug("invalid", { ...baseLog, reason: "resource_mismatch" });
+    logProtectedDownloadDecision({ leadTokenValid: false, leadFound: true, leadStatus: lead.status, slugMatch, finalRedirectMode: "none" });
     return { status: "invalid" as const, reason: "resource_mismatch" as const };
   }
   if (tokenExpired) {
     logLeadDownloadDebug("invalid", { ...baseLog, reason: "token_expired" });
+    logProtectedDownloadDecision({ leadTokenValid: false, leadFound: true, leadStatus: lead.status, slugMatch, finalRedirectMode: "none" });
     return { status: "invalid" as const, reason: "token_expired" as const };
   }
   if (unsubscribed) {
     logLeadDownloadDebug("invalid", { ...baseLog, reason: "lead_unsubscribed" });
+    logProtectedDownloadDecision({ leadTokenValid: false, leadFound: true, leadStatus: lead.status, slugMatch, finalRedirectMode: "none" });
     return { status: "invalid" as const, reason: "lead_unsubscribed" as const };
   }
 
@@ -469,19 +520,39 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
 
   if (!leadMagnet || !leadMagnet.isPublished) {
     logLeadDownloadDebug("invalid", { ...leadMagnetLog, reason: "lead_magnet_missing_or_unpublished" });
+    logProtectedDownloadDecision({ leadTokenValid: true, leadFound: true, leadStatus: lead.status, slugMatch, leadMagnetFound, pdfUrlExists: pdfUrlPresent, finalRedirectMode: "none" });
     return { status: "missing" as const };
   }
   if (!resolvedPdfUrl) {
     logLeadDownloadDebug("invalid", { ...leadMagnetLog, reason: "no_asset" });
+    logProtectedDownloadDecision({ leadTokenValid: true, leadFound: true, leadStatus: lead.status, slugMatch, leadMagnetFound, pdfUrlExists: false, finalRedirectMode: "none" });
     return { status: "no_asset" as const };
   }
 
-  const signedCloudinaryUrl = /^https:\/\//i.test(resolvedPdfUrl) && isLeadMagnetCloudinaryRawUploadUrl(resolvedPdfUrl)
+  const pdfUrlIsCloudinaryRaw = /^https:\/\//i.test(resolvedPdfUrl) && isLeadMagnetCloudinaryRawUploadUrl(resolvedPdfUrl);
+  const publicDeliveryStatus = pdfUrlIsCloudinaryRaw ? await checkPublicDeliveryStatus(resolvedPdfUrl) : "not_checked";
+  const signedCloudinaryUrl = pdfUrlIsCloudinaryRaw && publicDeliveryStatus !== 200
     ? cloudinarySignedRawUploadUrl(resolvedPdfUrl)
     : "";
+  const finalRedirectMode = signedCloudinaryUrl ? "signed" : /^https:\/\//i.test(resolvedPdfUrl) ? "public" : "none";
+
+  logProtectedDownloadDecision({
+    leadTokenValid: true,
+    leadFound: true,
+    leadStatus: lead.status,
+    slugMatch,
+    leadMagnetFound,
+    pdfUrlExists: pdfUrlPresent,
+    pdfUrlIsCloudinaryRaw,
+    publicDeliveryStatus,
+    signedFallbackGenerated: Boolean(signedCloudinaryUrl),
+    finalRedirectMode,
+  });
   logLeadDownloadDebug("ready", {
     ...leadMagnetLog,
     pdfDeliveryMode: signedCloudinaryUrl ? "signed-cloudinary" : /^https:\/\//i.test(resolvedPdfUrl) ? "public-https" : "direct",
+    publicDeliveryStatus,
+    signedFallbackGenerated: Boolean(signedCloudinaryUrl),
   });
   if (/^https:\/\//i.test(resolvedPdfUrl)) {
     return { status: "redirect" as const, downloadUrl: signedCloudinaryUrl || resolvedPdfUrl, title: leadMagnet.title };
