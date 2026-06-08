@@ -250,6 +250,50 @@ export function cloudinaryDeliveryUrl(publicId: string, width: number) {
   });
 }
 
+
+function parseCloudinaryRawUploadUrl(value: string) {
+  const cloudName = requiredEnv("CLOUDINARY_CLOUD_NAME");
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com") return null;
+    const prefix = `/${cloudName}/raw/upload/`;
+    if (!url.pathname.startsWith(prefix)) return null;
+
+    const rest = url.pathname.slice(prefix.length);
+    const parts = rest.split("/");
+    const versionPart = parts[0]?.match(/^v(\d+)$/) ? parts.shift() : undefined;
+    const publicId = decodeURIComponent(parts.join("/"));
+    if (!publicId.startsWith(cloudinaryFolder("lead-magnet-pdfs")) || !/\.pdf$/i.test(publicId)) return null;
+
+    return {
+      publicId,
+      version: versionPart ? Number(versionPart.slice(1)) : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function isLeadMagnetCloudinaryRawUploadUrl(value: string) {
+  configureCloudinary();
+  return Boolean(parseCloudinaryRawUploadUrl(value));
+}
+
+export function cloudinarySignedRawUploadUrl(value: string) {
+  configureCloudinary();
+  const parsed = parseCloudinaryRawUploadUrl(value);
+  if (!parsed) return "";
+
+  return cloudinary.url(parsed.publicId, {
+    secure: true,
+    resource_type: "raw",
+    type: "upload",
+    sign_url: true,
+    version: parsed.version,
+    expires_at: Math.floor(Date.now() / 1000) + 10 * 60,
+  });
+}
+
 export function cloudinaryAuthenticatedRawUrl(publicId: string) {
   configureCloudinary();
 

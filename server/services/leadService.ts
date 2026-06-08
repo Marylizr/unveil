@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import Lead from "../../models/Lead";
+import { cloudinarySignedRawUploadUrl, isLeadMagnetCloudinaryRawUploadUrl } from "../../lib/server/cloudinary";
 import { getAppUrl, sendEmail } from "../email";
 import { normalizeLeadMagnetPdfUrl, normalizeLeadMagnetSlug } from "../validators/leadMagnetValidator";
 import { sendSequenceEmail } from "./emailSequenceService";
@@ -475,9 +476,15 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
     return { status: "no_asset" as const };
   }
 
-  logLeadDownloadDebug("ready", leadMagnetLog);
+  const signedCloudinaryUrl = /^https:\/\//i.test(resolvedPdfUrl) && isLeadMagnetCloudinaryRawUploadUrl(resolvedPdfUrl)
+    ? cloudinarySignedRawUploadUrl(resolvedPdfUrl)
+    : "";
+  logLeadDownloadDebug("ready", {
+    ...leadMagnetLog,
+    pdfDeliveryMode: signedCloudinaryUrl ? "signed-cloudinary" : /^https:\/\//i.test(resolvedPdfUrl) ? "public-https" : "direct",
+  });
   if (/^https:\/\//i.test(resolvedPdfUrl)) {
-    return { status: "redirect" as const, downloadUrl: resolvedPdfUrl, title: leadMagnet.title };
+    return { status: "redirect" as const, downloadUrl: signedCloudinaryUrl || resolvedPdfUrl, title: leadMagnet.title };
   }
   return { status: "ready" as const, pdfUrl: resolvedPdfUrl, title: leadMagnet.title };
 }

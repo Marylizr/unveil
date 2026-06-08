@@ -14,6 +14,8 @@ type CloudinarySignedUpload = {
   folder: string;
   publicId: string;
   resourceType: "raw";
+  type: "upload";
+  accessMode: "public";
   overwrite: true;
   invalidate: true;
 };

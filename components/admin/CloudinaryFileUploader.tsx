@@ -10,6 +10,9 @@ type CloudinaryRawUploadResponse = {
   secure_url?: string;
   public_id?: string;
   resource_type?: string;
+  type?: string;
+  access_mode?: string;
+  access_control?: unknown;
   error?: { message?: string };
 };
 
@@ -51,6 +54,36 @@ export default function CloudinaryFileUploader({
     }
   }
 
+  function safeUrlHostPath(value?: string) {
+    if (!value) return "";
+    try {
+      const url = new URL(value);
+      return `${url.host}${url.pathname}`;
+    } catch {
+      return "";
+    }
+  }
+
+  async function validatePublicDelivery(url: string) {
+    try {
+      const head = await fetch(url, { method: "HEAD", cache: "no-store" });
+      return head.status;
+    } catch {
+      return "unavailable";
+    }
+  }
+
+  function logUploadDebug(result: CloudinaryRawUploadResponse, publicDeliveryStatus: number | "unavailable") {
+    console.info("[lead-magnet-pdf-upload]", {
+      resourceType: result.resource_type,
+      type: result.type,
+      accessMode: result.access_mode,
+      accessControl: result.access_control,
+      secureUrlHostPath: safeUrlHostPath(result.secure_url),
+      publicDeliveryStatus,
+    });
+  }
+
   async function uploadDirectlyToCloudinary(file: File) {
     if (!publicId) throw new Error("Add a normalized lead magnet slug before uploading the PDF.");
     const slug = publicId.replace(/\.pdf$/i, "");
@@ -69,6 +102,8 @@ export default function CloudinaryFileUploader({
     formData.append("signature", signed.signature);
     formData.append("folder", signed.folder);
     formData.append("public_id", signed.publicId);
+    formData.append("type", signed.type);
+    formData.append("access_mode", signed.accessMode);
     formData.append("overwrite", String(signed.overwrite));
     formData.append("invalidate", String(signed.invalidate));
 
@@ -93,7 +128,9 @@ export default function CloudinaryFileUploader({
       throw new Error(result.error?.message || "Cloudinary did not return a secure PDF URL.");
     }
 
-    return result.secure_url;
+    const publicDeliveryStatus = await validatePublicDelivery(result.secure_url);
+    logUploadDebug(result, publicDeliveryStatus);
+    return { secureUrl: result.secure_url, publicDeliveryStatus };
   }
 
   async function upload(file?: File) {
@@ -116,9 +153,13 @@ export default function CloudinaryFileUploader({
     setMessage("Requesting upload signature...");
 
     try {
-      const secureUrl = await uploadDirectlyToCloudinary(file);
+      const { secureUrl, publicDeliveryStatus } = await uploadDirectlyToCloudinary(file);
       onChange(secureUrl);
-      setMessage("PDF uploaded successfully.");
+      setMessage(
+        publicDeliveryStatus === 200
+          ? "PDF uploaded successfully. Public delivery verified."
+          : `PDF uploaded. Public delivery returned ${publicDeliveryStatus}; app download links will use signed delivery after token validation.`
+      );
     } catch (error) {
       setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
     } finally {
