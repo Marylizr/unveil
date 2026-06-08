@@ -62,6 +62,11 @@ function isValidSignedDownloadToken(token: string, lead: { _id: unknown; email: 
   return safeCompare(parsed.signature, expectedSignature);
 }
 
+function logLeadDownloadDebug(event: string, details: Record<string, unknown>) {
+  if (process.env.LEAD_DOWNLOAD_DEBUG !== "true" && process.env.NODE_ENV !== "production") return;
+  console.info(`[lead-download:${event}] ${JSON.stringify(details)}`);
+}
+
 function getConfirmationUrl(token: string) {
   return `${getAppUrl()}/confirm-email?token=${encodeURIComponent(token)}`;
 }
@@ -196,7 +201,18 @@ export async function confirmLead(token: string) {
     confirmationTokenExpiresAt: { $gt: new Date() },
   });
 
-  if (!lead) return { status: "invalid" as const };
+  if (!lead) {
+    logLeadDownloadDebug("confirm", { tokenPresent: Boolean(token), leadFound: false });
+    return { status: "invalid" as const };
+  }
+
+  logLeadDownloadDebug("confirm", {
+    tokenPresent: Boolean(token),
+    leadFound: true,
+    leadId: String(lead._id),
+    statusBefore: lead.status,
+    requestedLeadMagnetSlug: lead.requestedLeadMagnetSlug,
+  });
 
   lead.status = "confirmed";
   lead.emailConfirmedAt = new Date();
@@ -215,6 +231,17 @@ export async function confirmLead(token: string) {
     lead.requestedLeadMagnetSlug && downloadToken
       ? getDownloadUrl(lead.requestedLeadMagnetSlug, downloadToken)
       : undefined;
+
+  logLeadDownloadDebug("confirm-created-download", {
+    leadId: String(lead._id),
+    leadStatus: lead.status,
+    requestedLeadMagnetSlug: lead.requestedLeadMagnetSlug,
+    downloadTokenCreated: Boolean(downloadToken),
+    downloadTokenFormatRecognized: Boolean(downloadToken && parseSignedDownloadToken(downloadToken)),
+    downloadTokenHashSaved: Boolean(lead.downloadTokenHash),
+    downloadTokenExpired: lead.downloadTokenExpiresAt ? lead.downloadTokenExpiresAt <= new Date() : null,
+  });
+
   await sendSequenceEmail(lead, 1, downloadUrl);
 
   let leadMagnetTitle: string | undefined;
@@ -255,32 +282,166 @@ export async function unsubscribeLead(token: string) {
 
 export async function getLeadMagnetDownload(slug: string, token: string) {
   const tokenHash = hashToken(token);
+  const parsedToken = parseSignedDownloadToken(token);
+  logLeadDownloadDebug("start", {
+    receivedSlug: slug,
+    tokenPresent: Boolean(token),
+    tokenFormatRecognized: Boolean(parsedToken),
+    decodedLeadId: parsedToken?.id,
+  });
+
   let lead = await Lead.findOne({ downloadTokenHash: tokenHash });
+  let signedTokenVerificationResult: boolean | null = null;
 
-  if (!lead) {
-    const parsedToken = parseSignedDownloadToken(token);
-    if (!parsedToken) return { status: "invalid" as const, reason: "token_not_found" as const };
-
+  if (!lead && parsedToken) {
     lead = await Lead.findById(parsedToken.id);
-    if (!lead || !isValidSignedDownloadToken(token, lead, slug)) {
+    signedTokenVerificationResult = Boolean(lead && isValidSignedDownloadToken(token, lead, slug));
+    if (!lead || !signedTokenVerificationResult) {
+      logLeadDownloadDebug("invalid", {
+        receivedSlug: slug,
+        tokenPresent: Boolean(token),
+        tokenFormatRecognized: true,
+        signedTokenVerificationResult,
+        decodedLeadId: parsedToken.id,
+        leadFound: Boolean(lead),
+        reason: "token_not_found",
+      });
       return { status: "invalid" as const, reason: "token_not_found" as const };
     }
 
     if (lead.downloadTokenHash && lead.downloadTokenHash !== tokenHash) {
+      logLeadDownloadDebug("invalid", {
+        receivedSlug: slug,
+        tokenPresent: true,
+        tokenFormatRecognized: true,
+        signedTokenVerificationResult,
+        decodedLeadId: parsedToken.id,
+        leadFound: true,
+        leadStatus: lead.status,
+        requestedLeadMagnetSlug: lead.requestedLeadMagnetSlug,
+        reason: "token_replaced",
+      });
       return { status: "invalid" as const, reason: "token_replaced" as const };
     }
   }
 
-  if (lead.status !== "confirmed") return { status: "invalid" as const, reason: "lead_not_confirmed" as const };
-  if (lead.requestedLeadMagnetSlug !== slug) return { status: "invalid" as const, reason: "resource_mismatch" as const };
-  if (!lead.downloadTokenExpiresAt || lead.downloadTokenExpiresAt <= new Date()) {
+  if (!lead) {
+    const confirmationLead = await Lead.findOne({
+      confirmationTokenHash: tokenHash,
+      confirmationTokenExpiresAt: { $gt: new Date() },
+    });
+
+    if (confirmationLead) {
+      if (confirmationLead.requestedLeadMagnetSlug !== slug) {
+        logLeadDownloadDebug("invalid", {
+          receivedSlug: slug,
+          tokenPresent: true,
+          tokenFormatRecognized: false,
+          leadFound: true,
+          leadId: String(confirmationLead._id),
+          leadStatus: confirmationLead.status,
+          requestedLeadMagnetSlug: confirmationLead.requestedLeadMagnetSlug,
+          slugMatch: false,
+          reason: "resource_mismatch",
+        });
+        return { status: "invalid" as const, reason: "resource_mismatch" as const };
+      }
+
+      const confirmationResult = await confirmLead(token);
+      if (confirmationResult.status !== "confirmed" || !confirmationResult.downloadUrl) {
+        return { status: "invalid" as const, reason: "confirmation_failed" as const };
+      }
+
+      logLeadDownloadDebug("confirmed-from-download", {
+        receivedSlug: slug,
+        tokenPresent: true,
+        tokenFormatRecognized: false,
+        leadFound: true,
+        leadId: String(confirmationResult.lead._id),
+        leadStatus: confirmationResult.lead.status,
+        requestedLeadMagnetSlug: confirmationResult.leadMagnetSlug,
+        slugMatch: confirmationResult.leadMagnetSlug === slug,
+      });
+
+      return {
+        status: "redirect" as const,
+        downloadUrl: confirmationResult.downloadUrl,
+        title: confirmationResult.leadMagnetTitle,
+      };
+    }
+
+    logLeadDownloadDebug("invalid", {
+      receivedSlug: slug,
+      tokenPresent: Boolean(token),
+      tokenFormatRecognized: Boolean(parsedToken),
+      signedTokenVerificationResult,
+      decodedLeadId: parsedToken?.id,
+      leadFound: false,
+      reason: "token_not_found",
+    });
+    return { status: "invalid" as const, reason: "token_not_found" as const };
+  }
+
+  const slugMatch = lead.requestedLeadMagnetSlug === slug;
+  const tokenExpired = !lead.downloadTokenExpiresAt || lead.downloadTokenExpiresAt <= new Date();
+  const unsubscribed = Boolean(lead.unsubscribedAt);
+  const baseLog = {
+    receivedSlug: slug,
+    tokenPresent: Boolean(token),
+    tokenFormatRecognized: Boolean(parsedToken),
+    signedTokenVerificationResult,
+    decodedLeadId: parsedToken?.id,
+    leadFound: true,
+    leadId: String(lead._id),
+    leadStatus: lead.status,
+    requestedLeadMagnetSlug: lead.requestedLeadMagnetSlug,
+    slugMatch,
+    tokenExpired,
+    unsubscribed,
+  };
+
+  if (lead.status !== "confirmed") {
+    logLeadDownloadDebug("invalid", { ...baseLog, reason: "lead_not_confirmed" });
+    return { status: "invalid" as const, reason: "lead_not_confirmed" as const };
+  }
+  if (!slugMatch) {
+    logLeadDownloadDebug("invalid", { ...baseLog, reason: "resource_mismatch" });
+    return { status: "invalid" as const, reason: "resource_mismatch" as const };
+  }
+  if (tokenExpired) {
+    logLeadDownloadDebug("invalid", { ...baseLog, reason: "token_expired" });
     return { status: "invalid" as const, reason: "token_expired" as const };
   }
-  if (lead.unsubscribedAt) return { status: "invalid" as const, reason: "lead_unsubscribed" as const };
+  if (unsubscribed) {
+    logLeadDownloadDebug("invalid", { ...baseLog, reason: "lead_unsubscribed" });
+    return { status: "invalid" as const, reason: "lead_unsubscribed" as const };
+  }
 
-  const leadMagnet = await LeadMagnet.findOne({ slug, isPublished: true });
-  if (!leadMagnet) return { status: "missing" as const };
-  if (!leadMagnet.pdfUrl) return { status: "no_asset" as const };
+  const leadMagnet = await LeadMagnet.findOne({ slug });
+  const leadMagnetFound = Boolean(leadMagnet);
+  const leadMagnetPublished = Boolean(leadMagnet?.isPublished);
+  const pdfUrlPresent = Boolean(leadMagnet?.pdfUrl);
 
+  if (!leadMagnet || !leadMagnet.isPublished) {
+    logLeadDownloadDebug("invalid", {
+      ...baseLog,
+      leadMagnetFound,
+      leadMagnetPublished,
+      pdfUrlPresent,
+      reason: "lead_magnet_missing_or_unpublished",
+    });
+    return { status: "missing" as const };
+  }
+  if (!leadMagnet.pdfUrl) {
+    logLeadDownloadDebug("invalid", { ...baseLog, leadMagnetFound, leadMagnetPublished, pdfUrlPresent, reason: "no_asset" });
+    return { status: "no_asset" as const };
+  }
+
+  logLeadDownloadDebug("ready", {
+    ...baseLog,
+    leadMagnetFound,
+    leadMagnetPublished,
+    pdfUrlPresent,
+  });
   return { status: "ready" as const, pdfUrl: leadMagnet.pdfUrl, title: leadMagnet.title };
 }

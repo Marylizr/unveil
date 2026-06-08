@@ -76,7 +76,7 @@ export async function getLeadMagnetBySlug(slug: string) {
 }
 
 export function getLeadMagnetDownload(slug: string, token: string) {
-  return request<{ pdfUrl: string; title?: string }>(
+  return request<{ pdfUrl?: string; title?: string; downloadUrl?: string; needsRedirect?: boolean }>(
     `/api/lead-magnets/${encodeURIComponent(slug)}/download?token=${encodeURIComponent(token)}`
   );
 }

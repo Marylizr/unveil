@@ -15,9 +15,13 @@ export async function GET(request: Request, { params }: { params: { slug: string
 
     await connectToDatabase();
     const result = await getLeadMagnetDownload(params.slug, validated.value.token);
+    if (result.status === "redirect") {
+      return NextResponse.json({ downloadUrl: result.downloadUrl, title: result.title, needsRedirect: true });
+    }
+
     if (result.status === "no_asset") {
       return NextResponse.json(
-        { error: "This lead magnet is confirmed, but no PDF URL is attached in the CMS. Add a pdfUrl to the lead magnet record." },
+        { error: "PDF file is not attached in admin." },
         { status: 500 }
       );
     }

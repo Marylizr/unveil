@@ -24,6 +24,13 @@ export default function ProtectedDownloadPage() {
 
     getLeadMagnetDownload(slug, token)
       .then((result) => {
+        if (result.needsRedirect && result.downloadUrl) {
+          window.location.replace(result.downloadUrl);
+          return;
+        }
+        if (!result.pdfUrl) {
+          throw new Error("PDF file is not attached in admin.");
+        }
         setPdfUrl(result.pdfUrl);
         setTitle(result.title || "UNVEIL guide");
         setStatus("ready");
