@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import Lead from "../../models/Lead";
-import { cloudinarySignedRawUploadUrl, isLeadMagnetCloudinaryRawUploadUrl } from "../../lib/server/cloudinary";
+import { cloudinarySignedRawUrlDetails, isLeadMagnetCloudinaryRawUploadUrl } from "../../lib/server/cloudinary";
 import { getAppUrl, sendEmail } from "../email";
 import { normalizeLeadMagnetPdfUrl, normalizeLeadMagnetSlug } from "../validators/leadMagnetValidator";
 import { sendSequenceEmail } from "./emailSequenceService";
@@ -95,6 +95,12 @@ function logProtectedDownloadDecision(details: {
   pdfUrlExists?: boolean;
   pdfUrlIsCloudinaryRaw?: boolean;
   publicDeliveryStatus?: number | "unavailable" | "not_checked";
+  signedUrlGenerated?: boolean;
+  signedUrlResourceType?: "raw";
+  signedUrlType?: "upload" | "authenticated";
+  publicIdUsedForSigning?: string;
+  publicIdHasPdfExtension?: boolean;
+  signedUrlStatus?: number | "unavailable" | "not_checked";
   signedFallbackGenerated?: boolean;
   finalRedirectMode?: "public" | "signed" | "none";
   downloadCountUpdated?: boolean;
@@ -616,9 +622,11 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
 
   const pdfUrlIsCloudinaryRaw = /^https:\/\//i.test(resolvedPdfUrl) && isLeadMagnetCloudinaryRawUploadUrl(resolvedPdfUrl);
   const publicDeliveryStatus = pdfUrlIsCloudinaryRaw ? await checkPublicDeliveryStatus(resolvedPdfUrl) : "not_checked";
-  const signedCloudinaryUrl = pdfUrlIsCloudinaryRaw && publicDeliveryStatus !== 200
-    ? cloudinarySignedRawUploadUrl(resolvedPdfUrl)
-    : "";
+  const signedUrlDetails = pdfUrlIsCloudinaryRaw && publicDeliveryStatus !== 200
+    ? cloudinarySignedRawUrlDetails(resolvedPdfUrl)
+    : null;
+  const signedCloudinaryUrl = signedUrlDetails?.url || "";
+  const signedUrlStatus = signedCloudinaryUrl ? await checkPublicDeliveryStatus(signedCloudinaryUrl) : "not_checked";
   const finalRedirectMode = signedCloudinaryUrl ? "signed" : /^https:\/\//i.test(resolvedPdfUrl) ? "public" : "none";
   const downloadCountUpdated = await recordLeadMagnetDownload(lead._id);
   const tokenHashExistsAfterValidation = Boolean(lead.downloadTokenHash);
@@ -635,6 +643,12 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
     pdfUrlExists: pdfUrlPresent,
     pdfUrlIsCloudinaryRaw,
     publicDeliveryStatus,
+    signedUrlGenerated: Boolean(signedCloudinaryUrl),
+    signedUrlResourceType: signedUrlDetails?.resourceType,
+    signedUrlType: signedUrlDetails?.type,
+    publicIdUsedForSigning: signedUrlDetails?.publicId,
+    publicIdHasPdfExtension: signedUrlDetails?.publicIdHasPdfExtension,
+    signedUrlStatus,
     signedFallbackGenerated: Boolean(signedCloudinaryUrl),
     finalRedirectMode,
     downloadCountUpdated,
@@ -643,6 +657,12 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
     ...leadMagnetLog,
     pdfDeliveryMode: signedCloudinaryUrl ? "signed-cloudinary" : /^https:\/\//i.test(resolvedPdfUrl) ? "public-https" : "direct",
     publicDeliveryStatus,
+    signedUrlGenerated: Boolean(signedCloudinaryUrl),
+    signedUrlResourceType: signedUrlDetails?.resourceType,
+    signedUrlType: signedUrlDetails?.type,
+    publicIdUsedForSigning: signedUrlDetails?.publicId,
+    publicIdHasPdfExtension: signedUrlDetails?.publicIdHasPdfExtension,
+    signedUrlStatus,
     signedFallbackGenerated: Boolean(signedCloudinaryUrl),
     downloadCountUpdated,
   });

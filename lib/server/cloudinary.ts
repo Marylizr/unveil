@@ -251,16 +251,22 @@ export function cloudinaryDeliveryUrl(publicId: string, width: number) {
 }
 
 
+type CloudinaryRawDeliveryType = "upload" | "authenticated";
+
 function parseCloudinaryRawUploadUrl(value: string) {
   const cloudName = requiredEnv("CLOUDINARY_CLOUD_NAME");
   try {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com") return null;
-    const prefix = `/${cloudName}/raw/upload/`;
+
+    const prefix = `/${cloudName}/raw/`;
     if (!url.pathname.startsWith(prefix)) return null;
 
     const rest = url.pathname.slice(prefix.length);
     const parts = rest.split("/");
+    const deliveryType = parts.shift() as CloudinaryRawDeliveryType | undefined;
+    if (deliveryType !== "upload" && deliveryType !== "authenticated") return null;
+
     const versionPart = parts[0]?.match(/^v(\d+)$/) ? parts.shift() : undefined;
     const publicId = decodeURIComponent(parts.join("/"));
     if (!publicId.startsWith(cloudinaryFolder("lead-magnet-pdfs")) || !/\.pdf$/i.test(publicId)) return null;
@@ -268,6 +274,7 @@ function parseCloudinaryRawUploadUrl(value: string) {
     return {
       publicId,
       version: versionPart ? Number(versionPart.slice(1)) : undefined,
+      deliveryType,
     };
   } catch {
     return null;
@@ -279,19 +286,35 @@ export function isLeadMagnetCloudinaryRawUploadUrl(value: string) {
   return Boolean(parseCloudinaryRawUploadUrl(value));
 }
 
-export function cloudinarySignedRawUploadUrl(value: string) {
+export function cloudinarySignedRawUrlDetails(value: string) {
   configureCloudinary();
   const parsed = parseCloudinaryRawUploadUrl(value);
-  if (!parsed) return "";
+  if (!parsed) {
+    return {
+      url: "",
+      resourceType: "raw" as const,
+      type: undefined,
+      publicId: "",
+      publicIdHasPdfExtension: false,
+    };
+  }
 
-  return cloudinary.url(parsed.publicId, {
-    secure: true,
-    resource_type: "raw",
-    type: "upload",
-    sign_url: true,
-    version: parsed.version,
-    expires_at: Math.floor(Date.now() / 1000) + 10 * 60,
-  });
+  return {
+    url: cloudinary.utils.private_download_url(parsed.publicId, "", {
+      resource_type: "raw",
+      type: parsed.deliveryType,
+      expires_at: Math.floor(Date.now() / 1000) + 10 * 60,
+      attachment: false,
+    }),
+    resourceType: "raw" as const,
+    type: parsed.deliveryType,
+    publicId: parsed.publicId,
+    publicIdHasPdfExtension: /\.pdf$/i.test(parsed.publicId),
+  };
+}
+
+export function cloudinarySignedRawUploadUrl(value: string) {
+  return cloudinarySignedRawUrlDetails(value).url;
 }
 
 export function cloudinaryAuthenticatedRawUrl(publicId: string) {

@@ -10,8 +10,7 @@ export const dynamic = "force-dynamic";
 
 const LEAD_MAGNET_PDF_FOLDER = cloudinaryFolder("lead-magnet-pdfs");
 const RESOURCE_TYPE = "raw";
-const DELIVERY_TYPE = "upload";
-const ACCESS_MODE = "public";
+const DELIVERY_TYPE = "authenticated";
 
 type SignUploadBody = {
   slug?: unknown;
@@ -96,7 +95,6 @@ export async function POST(request: NextRequest) {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const uploadParams = {
-      access_mode: ACCESS_MODE,
       folder,
       invalidate: true,
       overwrite: true,
@@ -115,7 +113,6 @@ export async function POST(request: NextRequest) {
       publicId,
       resourceType,
       type: DELIVERY_TYPE,
-      accessMode: ACCESS_MODE,
       overwrite: true,
       invalidate: true,
     });

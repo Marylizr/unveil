@@ -103,7 +103,7 @@ export default function CloudinaryFileUploader({
     formData.append("folder", signed.folder);
     formData.append("public_id", signed.publicId);
     formData.append("type", signed.type);
-    formData.append("access_mode", signed.accessMode);
+    if (signed.accessMode) formData.append("access_mode", signed.accessMode);
     formData.append("overwrite", String(signed.overwrite));
     formData.append("invalidate", String(signed.invalidate));
 
