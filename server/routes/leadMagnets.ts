@@ -67,6 +67,10 @@ router.get("/:slug/download", rateLimit, async (req: Request, res: Response) => 
     }
 
     const result = await getLeadMagnetDownload(req.params.slug, validated.value.token);
+    if (result.status === "redirect") {
+      res.redirect(result.downloadUrl);
+      return;
+    }
     if (result.status !== "ready") {
       res.status(403).json({ error: "Download link is invalid or expired" });
       return;
@@ -131,7 +135,11 @@ router.patch("/:id/publish", requireAdmin, rateLimit, async (req: Request, res: 
       return;
     }
     res.json(leadMagnet);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "LeadMagnetPublishValidationError") {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     res.status(400).json({ error: "Failed to publish lead magnet" });
   }
 });

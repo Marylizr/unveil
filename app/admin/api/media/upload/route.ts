@@ -37,7 +37,15 @@ function cleanPublicId(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  return trimmed.replace(/[^a-zA-Z0-9/_-]/g, "-").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+  return trimmed.replace(/[^a-zA-Z0-9/_.-]/g, "-").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+}
+
+function normalizeLeadMagnetPdfPublicId(value?: string) {
+  if (!value) return undefined;
+  const withoutFolder = value.replace(/^unveil\/lead-magnets\/pdfs\//, "");
+  const withoutUploadPrefix = withoutFolder.replace(/^raw\/upload\/(?:v\d+\/)?/, "");
+  const withoutExtension = withoutUploadPrefix.replace(/\.pdf$/i, "");
+  return withoutExtension ? `${withoutExtension}.pdf` : undefined;
 }
 
 function defaultAlt(file: File, alt: string) {
@@ -89,8 +97,17 @@ export async function POST(request: NextRequest) {
         return errorResponse("PDF must be 20MB or smaller", 413, `Received ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
       }
 
-      if (file.type !== "application/pdf" && !sniffPdf(buffer)) {
-        return errorResponse("Invalid file type", 400, `Only PDF files are supported. Received ${file.type || "unknown MIME type"}.`);
+      if (file.type !== "application/pdf") {
+        return errorResponse("Invalid file type", 400, `Only application/pdf uploads are supported. Received ${file.type || "unknown MIME type"}.`);
+      }
+
+      if (!sniffPdf(buffer)) {
+        return errorResponse("Invalid PDF file", 400, "The selected file does not look like a valid PDF.");
+      }
+
+      const pdfPublicId = normalizeLeadMagnetPdfPublicId(publicId);
+      if (!pdfPublicId) {
+        return errorResponse("PDF public ID is required", 400, "Lead magnet PDF uploads must include a normalized slug-based public ID.");
       }
 
       if (!hasCloudinaryConfig()) {
@@ -101,7 +118,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const uploaded = await uploadRawFileToCloudinary({ buffer, folderType: rawFolderType, publicId });
+      const uploaded = await uploadRawFileToCloudinary({ buffer, folderType: rawFolderType, publicId: pdfPublicId });
 
       return NextResponse.json(
         {

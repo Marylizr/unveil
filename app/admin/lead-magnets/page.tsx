@@ -17,6 +17,7 @@ export default function AdminLeadMagnetsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [message, setMessage] = useState("");
 
   async function load() {
     setItems(await adminApi.leadMagnets.list(token));
@@ -42,9 +43,21 @@ export default function AdminLeadMagnetsPage() {
     await load();
   }
 
+  async function togglePublish(item: LeadMagnet) {
+    setMessage(item.isPublished ? "Unpublishing..." : "Publishing...");
+    try {
+      await adminApi.leadMagnets.publish(token, item._id, !item.isPublished);
+      setMessage(item.isPublished ? "Unpublished." : "Published.");
+      await load();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update publishing status.");
+    }
+  }
+
   return (
     <div>
       <AdminHeader eyebrow="Conversion" title="Lead Magnets" action={<Link className="admin-primary" href="/admin/lead-magnets/new">New lead magnet</Link>} />
+      {message && <p className="mb-4 font-sans text-sm text-[#5F6648]">{message}</p>}
       <div className="admin-tools-card mb-6 grid grid-cols-1 gap-4 md:grid-cols-[1fr_240px]">
         <SearchBox value={query} onChange={(value) => { setQuery(value); setPage(1); }} />
         <FilterSelect label="Status" value={status} onChange={(value) => { setStatus(value); setPage(1); }} options={[{ label: "All", value: "all" }, { label: "Draft", value: "draft" }, { label: "Scheduled", value: "scheduled" }, { label: "Published", value: "published" }, { label: "Archived", value: "archived" }]} />
@@ -75,7 +88,7 @@ export default function AdminLeadMagnetsPage() {
                 <td>
                   <div className="admin-table-actions">
                   <Link href={`/admin/lead-magnets/${item._id}`}>Edit</Link>
-                  <button onClick={() => adminApi.leadMagnets.publish(token, item._id, !item.isPublished).then(load)}>{item.isPublished ? "Unpublish" : "Publish"}</button>
+                  <button onClick={() => togglePublish(item)}>{item.isPublished ? "Unpublish" : "Publish"}</button>
                   <button className="admin-danger" onClick={() => remove(item)}>Delete</button>
                   </div>
                 </td>

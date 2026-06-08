@@ -1,6 +1,6 @@
 import LeadMagnet from "../../models/LeadMagnet";
 import { serializeAdminLeadMagnet, serializeLeadMagnet } from "../serializers/leadMagnetSerializer";
-import { normalizeLeadMagnetSlug } from "../validators/leadMagnetValidator";
+import { normalizeLeadMagnetSlug, validatePublishedLeadMagnetFields } from "../validators/leadMagnetValidator";
 import { normalizePublishingFields, publicPublishedQuery } from "./publishingWorkflow";
 
 export async function listLeadMagnets() {
@@ -56,5 +56,23 @@ export async function deleteLeadMagnet(id: string) {
 }
 
 export async function setLeadMagnetPublished(id: string, isPublished: boolean) {
-  return updateLeadMagnet(id, { publicationStatus: isPublished ? "published" : "draft" });
+  if (!isPublished) return updateLeadMagnet(id, { publicationStatus: "draft" });
+
+  const leadMagnet = await LeadMagnet.findById(id);
+  if (!leadMagnet) return null;
+
+  const errors = validatePublishedLeadMagnetFields({
+    title: leadMagnet.title,
+    slug: leadMagnet.slug,
+    description: leadMagnet.description,
+    pdfUrl: leadMagnet.pdfUrl,
+  });
+
+  if (errors.length) {
+    const error = new Error(errors.join("; "));
+    error.name = "LeadMagnetPublishValidationError";
+    throw error;
+  }
+
+  return updateLeadMagnet(id, { publicationStatus: "published" });
 }

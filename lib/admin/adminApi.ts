@@ -20,7 +20,16 @@ async function adminRequest<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error("Unauthorized");
   }
 
-  if (!response.ok) throw new Error(`Admin request failed: ${response.status}`);
+  if (!response.ok) {
+    const fallback = `Admin request failed: ${response.status}`;
+    try {
+      const error = (await response.json()) as { error?: string; details?: string; errors?: string[] };
+      throw new Error(error.details || error.error || error.errors?.join("; ") || fallback);
+    } catch (error) {
+      if (error instanceof Error && error.message !== fallback) throw error;
+      throw new Error(fallback);
+    }
+  }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }

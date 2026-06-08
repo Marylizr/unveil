@@ -476,5 +476,8 @@ export async function getLeadMagnetDownload(slug: string, token: string) {
   }
 
   logLeadDownloadDebug("ready", leadMagnetLog);
+  if (/^https:\/\//i.test(resolvedPdfUrl)) {
+    return { status: "redirect" as const, downloadUrl: resolvedPdfUrl, title: leadMagnet.title };
+  }
   return { status: "ready" as const, pdfUrl: resolvedPdfUrl, title: leadMagnet.title };
 }

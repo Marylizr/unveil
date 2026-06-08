@@ -16,6 +16,7 @@ export default function CloudinaryFileUploader({
   label = "Upload file",
   helperText,
   accept = "application/pdf,.pdf",
+  publicId,
 }: {
   folderType: Extract<CloudinaryFolderType, "lead-magnet-pdfs">;
   value?: string;
@@ -23,6 +24,7 @@ export default function CloudinaryFileUploader({
   label?: string;
   helperText?: string;
   accept?: string;
+  publicId?: string;
 }) {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -34,13 +36,24 @@ export default function CloudinaryFileUploader({
 
     setFileName(file.name);
     setFileSize(file.size);
+
+    if (file.type !== "application/pdf") {
+      setMessage(`Upload failed: only PDF files are supported. Selected ${file.type || "unknown file type"}.`);
+      return;
+    }
+
+    if (!publicId) {
+      setMessage("Upload failed: add a normalized lead magnet slug before uploading the PDF.");
+      return;
+    }
+
     setIsUploading(true);
-    setMessage("Uploading...");
+    setMessage("Uploading PDF...");
 
     try {
-      const asset = await adminApi.media.upload(file, file.name, folderType);
+      const asset = await adminApi.media.upload(file, file.name, folderType, publicId);
       onChange(asset.secureUrl || asset.url);
-      setMessage("Uploaded.");
+      setMessage("PDF uploaded.");
     } catch (error) {
       setMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
     } finally {
@@ -67,14 +80,15 @@ export default function CloudinaryFileUploader({
           disabled={isUploading}
           onChange={(event) => upload(event.target.files?.[0])}
         />
-        {fileName && <small>{fileName}{fileSize ? ` · ${formatSize(fileSize)}` : ""}</small>}
+        {fileName && <small>Selected: {fileName}{fileSize ? ` · ${formatSize(fileSize)}` : ""}</small>}
+        {isUploading && <small>Uploading PDF to Cloudinary...</small>}
       </label>
 
       {value ? (
         <div className="admin-media-empty admin-media-empty-wide">
-          <span>Uploaded file ready.</span>
+          <span>{value.startsWith("https://") ? value : "PDF uploaded."}</span>
           <a className="admin-secondary" href={value} target="_blank" rel="noreferrer">
-            Open file
+            Open PDF
           </a>
         </div>
       ) : (

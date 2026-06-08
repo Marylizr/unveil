@@ -281,6 +281,10 @@ async function handleDelete(_request: NextRequest, context: RouteContext) {
 }
 
 async function handleError(error: unknown) {
+  if (error instanceof Error && error.name === "LeadMagnetPublishValidationError") {
+    return json({ error: error.message }, 400);
+  }
+
   if (process.env.NODE_ENV !== "production") {
     console.error("[admin-api-next]", error);
   }

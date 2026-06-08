@@ -9,6 +9,11 @@ import CloudinaryFileUploader from "./CloudinaryFileUploader";
 import CloudinaryImageUploader from "./CloudinaryImageUploader";
 import { MediaPreview } from "./MediaPicker";
 
+function leadMagnetPdfPublicId(slug: string, title = "") {
+  const normalizedSlug = slugifyLeadMagnet(slug, title);
+  return normalizedSlug ? `${normalizedSlug}.pdf` : "";
+}
+
 function slugifyLeadMagnet(value: string, title = "") {
   const base = (value || title)
     .toLowerCase()
@@ -138,7 +143,8 @@ export default function LeadMagnetForm({ leadMagnet }: { leadMagnet?: LeadMagnet
             folderType="lead-magnet-pdfs"
             value={form.pdfUrl || ""}
             label="Lead magnet PDF upload"
-            helperText="Upload the public/free PDF delivered after form submission. This URL is stored in the lead magnet PDF URL field."
+            helperText="Upload the public/free PDF delivered after form submission. The Cloudinary public ID uses the normalized lead magnet slug and the returned secure URL is stored below."
+            publicId={leadMagnetPdfPublicId(form.slug || "", form.title || "")}
             onChange={(url) => setField("pdfUrl", url)}
           />
         </div>
