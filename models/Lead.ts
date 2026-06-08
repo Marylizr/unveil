@@ -35,6 +35,8 @@ export interface ILead extends Document {
   }>;
   downloadTokenHash?: string;
   downloadTokenExpiresAt?: Date;
+  downloadCount: number;
+  lastDownloadedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +86,8 @@ const LeadSchema = new Schema<ILead>(
     },
     downloadTokenHash: { type: String, index: true },
     downloadTokenExpiresAt: { type: Date },
+    downloadCount: { type: Number, default: 0, min: 0 },
+    lastDownloadedAt: { type: Date },
   },
   { timestamps: true }
 );
