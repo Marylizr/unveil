@@ -101,6 +101,8 @@ export interface LeadMagnet {
   publicationStatus?: PublishingStatus;
   scheduledAt?: string;
   publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LeadPayload {

@@ -8,6 +8,21 @@ export async function listLeadMagnets() {
   return leadMagnets.map(serializeLeadMagnet);
 }
 
+export async function listPublishedLeadMagnetsForLinks() {
+  const leadMagnets = await LeadMagnet.find({
+    isPublished: true,
+    publicationStatus: "published",
+    slug: { $type: "string", $regex: /\S/ },
+    title: { $type: "string", $regex: /\S/ },
+  }).sort({ publishedAt: -1, createdAt: -1 });
+
+  return leadMagnets.map(serializeLeadMagnet).filter((leadMagnet: Record<string, unknown>) => {
+    const slug = typeof leadMagnet.slug === "string" ? leadMagnet.slug.trim() : "";
+    const title = typeof leadMagnet.title === "string" ? leadMagnet.title.trim() : "";
+    return Boolean(slug && title);
+  });
+}
+
 export async function listAdminLeadMagnets() {
   const leadMagnets = await LeadMagnet.find().sort({ createdAt: -1 });
   return leadMagnets.map(serializeAdminLeadMagnet);

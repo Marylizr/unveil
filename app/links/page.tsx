@@ -1,118 +1,115 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import { connectToDatabase } from "@/lib/server/db";
+import { listPublishedLeadMagnetsForLinks } from "@/server/services/leadMagnetService";
+import type { LeadMagnet } from "@/types/content";
 
 export const metadata: Metadata = {
-  title: "Unveil Links",
-  description: "Free guides, articles, and education from Unveil.",
+  title: "UNVEIL Guides",
+  description: "Discreet educational guides from UNVEIL on hygiene, confidence, intimacy, and modern self-care.",
   openGraph: {
-    title: "Unveil Links",
-    description: "Free guides, articles, and education from Unveil.",
+    title: "UNVEIL Guides",
+    description: "Discreet educational guides from UNVEIL on hygiene, confidence, intimacy, and modern self-care.",
     type: "website",
   },
 };
 
-const secondaryLinks = [
-  {
-    href: "/learn",
-    title: "Read the Unveil Journal",
-    subtitle: "Editorial guides on hygiene, pleasure, body literacy, and mature confidence.",
-  },
-  {
-    href: "/modern-man-code",
-    title: "The Modern Man Code",
-    subtitle: "A foundational digital guide to refined masculine care and self-respect.",
-  },
-  {
-    href: "/understanding-female-pleasure",
-    title: "Understanding Female Pleasure",
-    subtitle: "Communication, anatomy literacy, emotional safety, and attentive intimacy.",
-  },
-  {
-    href: "/the-art-of-connection",
-    title: "The Art of Connection",
-    subtitle: "Presence, calm confidence, communication, and emotionally intelligent dating.",
-  },
-  {
-    href: "/#newsletter",
-    title: "Join the Newsletter",
-    subtitle: "Private educational updates for men who prefer substance over noise.",
-  },
-  {
-    href: "/",
-    title: "Visit Unveil",
-    subtitle: "Enter the full platform for education, resources, and the latest releases.",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function LinksPage() {
+async function loadLeadMagnets(): Promise<LeadMagnet[]> {
+  try {
+    await connectToDatabase();
+    return (await listPublishedLeadMagnetsForLinks()) as unknown as LeadMagnet[];
+  } catch {
+    return [];
+  }
+}
+
+function getLeadMagnetImageAlt(leadMagnet: LeadMagnet) {
+  return leadMagnet.coverImage?.alt?.trim() || `${leadMagnet.title} guide cover`;
+}
+
+export default async function LinksPage() {
+  const leadMagnets = await loadLeadMagnets();
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-deep px-5 py-8 text-cream sm:px-6 sm:py-12">
-      <div className="absolute inset-0 editorial-grain opacity-40" aria-hidden="true" />
-      <div
-        className="absolute left-1/2 top-0 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(178,142,94,0.24),rgba(175,171,134,0.08)_42%,transparent_68%)] blur-2xl"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-[-12rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,rgba(77,92,42,0.34),transparent_66%)] blur-2xl"
-        aria-hidden="true"
-      />
-
-      <section className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[600px] flex-col py-6">
-        <header className="mb-9 text-center">
-          <div className="mb-7 flex justify-center">
-            <BrandLogo variant="white" context="footer" />
+    <main className="min-h-screen bg-[#F4F1E8] px-4 py-7 text-deep sm:px-6 sm:py-10">
+      <section className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-[560px] flex-col">
+        <header className="mb-8 text-center">
+          <div className="mb-6 flex justify-center">
+            <BrandLogo variant="dark" context="footer" />
           </div>
-          <p className="mx-auto max-w-sm font-sans text-sm leading-relaxed text-[rgba(232,232,226,0.76)]">
-            Male pleasure, hygiene, confidence & sexual health education.
+          <h1 className="font-serif text-4xl leading-tight text-deep sm:text-5xl">UNVEIL Guides</h1>
+          <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-[#4D5C2A] sm:text-[15px]">
+            Discreet educational resources for male hygiene, confidence, intimacy, and modern self-care.
           </p>
         </header>
 
-        <div className="rounded-[30px] border border-[#E8E8E2]/14 bg-[#E8E8E2]/[0.075] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur">
-          <Link
-            href="/lead-magnets/7-hygiene-mistakes"
-            className="links-primary-cta group block rounded-[24px] border border-gold/35 bg-[#F4F1E8] p-6 text-deep transition duration-300 hover:-translate-y-0.5 hover:border-gold focus-visible:-translate-y-0.5 sm:p-7"
-            aria-label="Download the free guide: The 7 Hygiene Mistakes Most Men Make"
-            data-track="links-primary-guide"
-          >
-            <span className="mb-5 inline-flex rounded-full bg-deep px-4 py-2 font-sans text-[10px] uppercase tracking-[0.26em] text-gold">
-              Free guide
-            </span>
-            <h1 className="font-serif text-4xl leading-[1.04] text-deep sm:text-5xl">
-              Free Guide: The 7 Hygiene Mistakes Most Men Make
-            </h1>
-            <p className="mt-5 font-sans text-sm leading-relaxed text-[#5F6648] sm:text-[15px]">
-              A practical, science-backed guide to help men upgrade the hygiene habits nobody ever properly taught them.
-            </p>
-            <span className="mt-7 flex min-h-[52px] items-center justify-center rounded-full bg-deep px-6 text-center font-sans text-xs uppercase tracking-widest text-[#E8E8E2] transition-colors group-hover:bg-olive">
-              Download the Free Guide
-            </span>
-          </Link>
-        </div>
+        {leadMagnets.length > 0 ? (
+          <div className="grid gap-3" aria-label="Published UNVEIL guides">
+            {leadMagnets.map((leadMagnet) => (
+              <Link
+                key={leadMagnet._id || leadMagnet.slug}
+                href={`/lead-magnets/${leadMagnet.slug}`}
+                className="group grid min-h-[128px] grid-cols-[86px_1fr] gap-4 rounded-lg border border-[#D8CFBE] bg-[#FAFAF7] p-3 text-deep shadow-[0_14px_34px_rgba(26,32,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:border-[#B28E5E] focus-visible:-translate-y-0.5 sm:grid-cols-[104px_1fr] sm:p-4"
+                aria-label={`Get the guide: ${leadMagnet.title}`}
+                data-track={`links-lead-magnet-${leadMagnet.slug}`}
+              >
+                <span className="block h-full min-h-[104px] overflow-hidden rounded-md border border-[#E8E3D8] bg-[#E8E3D8]">
+                  {leadMagnet.coverImage?.url ? (
+                    <img
+                      src={leadMagnet.coverImage.url}
+                      alt={getLeadMagnetImageAlt(leadMagnet)}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <span className="flex h-full min-h-[104px] items-center justify-center bg-deep px-3 text-center font-sans text-[10px] uppercase tracking-[0.2em] text-gold">
+                      UNVEIL
+                    </span>
+                  )}
+                </span>
 
-        <div className="mt-4 grid gap-3" aria-label="Unveil links">
-          {secondaryLinks.map((item) => (
+                <span className="flex min-w-0 flex-col py-1">
+                  {leadMagnet.category ? (
+                    <span className="mb-2 font-sans text-[10px] uppercase tracking-[0.2em] text-[#6E744F]">
+                      {leadMagnet.category}
+                    </span>
+                  ) : null}
+                  <span className="font-sans text-[15px] font-semibold leading-snug text-deep sm:text-base">
+                    {leadMagnet.title}
+                  </span>
+                  {leadMagnet.description ? (
+                    <span className="mt-2 font-sans text-xs leading-relaxed text-[#5F6648] sm:text-[13px]">
+                      {leadMagnet.description}
+                    </span>
+                  ) : null}
+                  <span className="mt-4 inline-flex min-h-[42px] w-full items-center justify-center rounded-md bg-deep px-4 text-center font-sans text-[11px] uppercase tracking-[0.18em] text-[#F4F1E8] transition-colors group-hover:bg-olive">
+                    Get the guide
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-[#D8CFBE] bg-[#FAFAF7] p-6 text-center shadow-[0_14px_34px_rgba(26,32,16,0.08)]">
+            <p className="font-serif text-3xl leading-tight text-deep">New guides are coming soon.</p>
             <Link
-              key={item.href}
-              href={item.href}
-              className="links-secondary-card group block rounded-[22px] border border-[#E8E8E2]/12 bg-[#E8E8E2]/[0.055] px-5 py-4 transition duration-300 hover:-translate-y-0.5 hover:border-gold/45 hover:bg-[#E8E8E2]/[0.085] focus-visible:-translate-y-0.5"
-              data-track={`links-${item.href.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "home"}`}
+              href="/"
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-md bg-deep px-5 text-center font-sans text-xs uppercase tracking-[0.18em] text-[#F4F1E8] transition-colors hover:bg-olive"
             >
-              <span className="block font-sans text-[13px] font-semibold leading-tight text-[#F4F1E8]">
-                {item.title}
-              </span>
-              <span className="mt-2 block font-sans text-xs leading-relaxed text-[rgba(232,232,226,0.62)]">
-                {item.subtitle}
-              </span>
+              Return home
             </Link>
-          ))}
-        </div>
+          </div>
+        )}
 
         <footer className="mt-auto pt-10 text-center">
-          <p className="mx-auto max-w-sm font-sans text-xs leading-relaxed text-[rgba(232,232,226,0.58)]">
-            Education for men who want to understand their body, intimacy, and confidence with more honesty.
-          </p>
-          <p className="mt-5 font-sans text-[11px] uppercase tracking-[0.28em] text-gold">@unveil</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-sans text-xs text-[#4D5C2A]" aria-label="Footer links">
+            <Link className="underline-offset-4 hover:underline" href="/">Home</Link>
+            <Link className="underline-offset-4 hover:underline" href="/privacy">Privacy</Link>
+            <Link className="underline-offset-4 hover:underline" href="/unsubscribe">Unsubscribe</Link>
+          </nav>
+          <p className="mt-5 font-sans text-[11px] uppercase tracking-[0.24em] text-[#8A7049]">@unveil</p>
         </footer>
       </section>
     </main>
