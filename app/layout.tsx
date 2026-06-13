@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   authors: [{ name: "UNVEIL" }],
   creator: "UNVEIL",
   publisher: "UNVEIL",
+  icons: {
+    icon: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781346028/favicon_o2ojzx.png",
+    shortcut: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781346028/favicon_o2ojzx.png",
+    apple: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781346028/favicon_o2ojzx.png",
+  },
   openGraph: {
     title: "UNVEIL | Men's Intimate Health & Body Literacy",
     description:
