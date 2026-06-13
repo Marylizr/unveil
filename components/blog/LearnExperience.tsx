@@ -64,7 +64,7 @@ export default function LearnExperience({ initialArticles }: { initialArticles: 
         <div className="relative mx-auto max-w-7xl">
           <header className="max-w-4xl">
             <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-mist">The journal</p>
-            <h1 className="font-serif text-6xl leading-tight text-cream md:text-8xl">Men's health, without the noise</h1>
+            <h1 className="font-serif text-6xl leading-tight text-cream md:text-8xl">Men&apos;s health, without the noise</h1>
             <p className="mt-6 max-w-2xl font-sans text-base leading-relaxed text-sage/80 md:text-lg">
               A premium educational library for intimate hygiene, body literacy, emotional intelligence, communication, and grounded masculine self-care.
             </p>

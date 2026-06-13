@@ -25,16 +25,16 @@ export default function WhatUnveilTeaches() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="editorial-section bg-[#E8E8E2] px-6">
+    <section className="editorial-section bg-[#444f26] px-6 text-[#efe9df]">
       <div className="mx-auto max-w-7xl">
         <div className="mb-14 grid grid-cols-1 gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-end">
           <div>
-            <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-gold">What UNVEIL teaches</p>
-            <h2 className="font-serif text-5xl leading-tight text-deep md:text-6xl">
+            <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-[#90844a]">What UNVEIL teaches</p>
+            <h2 className="font-serif text-5xl leading-tight text-[#efe9df] md:text-6xl">
             A modern curriculum for men’s self-care.
             </h2>
           </div>
-          <p className="max-w-xl font-sans text-sm leading-relaxed text-[#5F6648] md:justify-self-end">
+          <p className="max-w-xl font-sans text-sm leading-relaxed text-[#efe9df]/72 md:justify-self-end">
             A calm sequence of literacy, routine, self-awareness, and responsible intimacy education.
           </p>
         </div>
@@ -48,15 +48,15 @@ export default function WhatUnveilTeaches() {
               whileHover={shouldReduceMotion ? undefined : { y: -4 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.72, delay: shouldReduceMotion ? 0 : index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              className="editorial-card group flex min-h-[280px] flex-col bg-[#F4F1E8] transition-colors duration-300 hover:border-gold/45"
+              className="group flex min-h-[280px] flex-col rounded-3xl border border-[#efe9df]/15 bg-[#efe9df]/8 p-[clamp(1.5rem,3vw,2.5rem)] text-[#efe9df] shadow-[0_24px_80px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:border-[#90844a]/55"
             >
-              <span className="mb-8 block font-sans text-5xl font-semibold leading-none text-[#4D5039] transition-transform duration-500 group-hover:-translate-y-1">
+              <span className="mb-8 block font-sans text-5xl font-semibold leading-none text-[#efe9df]/70 transition-transform duration-500 group-hover:-translate-y-1">
                 0{index + 1}
               </span>
-              <h3 className="mb-3 font-sans text-2xl leading-tight text-[#202315]">{topic.title}</h3>
-              <p className="font-sans text-sm leading-relaxed text-[#5F6648]">{topic.body}</p>
+              <h3 className="mb-3 font-sans text-2xl leading-tight text-[#efe9df]">{topic.title}</h3>
+              <p className="font-sans text-sm leading-relaxed text-[#efe9df]/72">{topic.body}</p>
               <span className="mt-auto block pt-8">
-                <span className="block h-px w-10 bg-gold/35 transition-all duration-500 group-hover:w-20 group-hover:bg-gold/70" />
+                <span className="block h-px w-10 bg-[#90844a]/55 transition-all duration-500 group-hover:w-20 group-hover:bg-[#90844a]" />
               </span>
             </motion.article>
           ))}

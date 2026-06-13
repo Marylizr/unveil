@@ -45,7 +45,7 @@ export default function Hero() {
   const animate = "visible";
 
   return (
-    <section className="relative min-h-screen bg-deep flex items-center justify-center overflow-hidden pt-24 pb-16">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#232618_0%,#444f26_55%,#90844a_130%)] px-6 pb-16 pt-24 text-[#efe9df]">
       {/* Subtle grain overlay */}
       <motion.div
         className="absolute inset-0 opacity-20 pointer-events-none"
@@ -59,13 +59,13 @@ export default function Hero() {
 
       {/* Radial gradient glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-forest/20 blur-[120px]" />
+        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#efe9df]/10 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+      <div className="relative z-10 mx-auto max-w-5xl text-center">
         {/* Eyebrow */}
         <motion.p
-          className="font-sans text-xs uppercase tracking-[0.3em] text-mist mb-8 opacity-80"
+          className="mb-8 font-sans text-xs uppercase tracking-[0.3em] text-[#efe9df]/72"
           variants={fadeUp}
           initial={initial}
           animate={animate}
@@ -75,7 +75,7 @@ export default function Hero() {
 
         {/* Main headline */}
         <motion.h1
-          className="font-serif text-6xl md:text-8xl lg:text-9xl text-cream leading-[0.95] tracking-tight mb-10"
+          className="mb-10 font-serif text-6xl leading-[0.95] text-[#efe9df] md:text-8xl lg:text-9xl"
           variants={headline}
           initial={initial}
           animate={animate}
@@ -89,7 +89,7 @@ export default function Hero() {
 
         {/* Body */}
         <motion.p
-          className="font-sans text-base md:text-lg text-sage/80 max-w-xl mx-auto leading-relaxed mb-12"
+          className="mx-auto mb-12 max-w-xl font-sans text-base leading-relaxed text-[#efe9df]/76 md:text-lg"
           variants={fadeUp}
           initial={initial}
           animate={animate}
@@ -102,13 +102,13 @@ export default function Hero() {
         <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-4" variants={ctas} initial={initial} animate={animate}>
           <Link
             href="/products"
-            className="font-sans text-xs tracking-widest uppercase bg-mist text-deep px-8 py-3.5 hover:bg-cream transition-colors duration-300"
+            className="bg-[#efe9df] px-8 py-3.5 font-sans text-xs uppercase tracking-widest text-[#232618] transition-colors duration-300 hover:bg-[#f8f3ea]"
           >
             {t.hero.cta1}
           </Link>
           <Link
             href="/learn"
-            className="font-sans text-xs tracking-widest uppercase border border-sage/40 text-sage px-8 py-3.5 hover:border-mist hover:text-mist transition-all duration-300"
+            className="border border-[#efe9df]/35 px-8 py-3.5 font-sans text-xs uppercase tracking-widest text-[#efe9df] transition-all duration-300 hover:bg-[#efe9df]/10"
           >
             {t.hero.cta2}
           </Link>
@@ -118,7 +118,7 @@ export default function Hero() {
       {/* Scroll indicator */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
         <motion.div
-          className="w-px h-12 origin-top bg-sage"
+          className="h-12 w-px origin-top bg-[#efe9df]/55"
           variants={lineReveal}
           initial={initial}
           animate={animate}

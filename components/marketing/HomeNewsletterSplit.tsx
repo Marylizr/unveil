@@ -73,13 +73,13 @@ export default function HomeNewsletterSplit() {
   }
 
   return (
-    <section ref={sectionRef} id="newsletter" className="bg-[#E8E8E2] px-6 py-[clamp(5rem,8vw,8rem)]">
+    <section ref={sectionRef} id="newsletter" className="bg-[linear-gradient(135deg,#232618_0%,#444f26_55%,#90844a_130%)] px-6 py-[clamp(5rem,8vw,8rem)] text-[#efe9df]">
       <div className="mx-auto grid max-w-7xl gap-[clamp(1.5rem,4vw,3rem)] lg:grid-cols-[0.86fr_1.14fr]">
         <div className="reveal lg:sticky lg:top-28 lg:self-start">
-          <p className="mb-5 font-sans text-xs uppercase tracking-[0.3em] text-gold">{t.newsletter.label}</p>
+          <p className="mb-5 font-sans text-xs uppercase tracking-[0.3em] text-[#90844a]">{t.newsletter.label}</p>
           <motion.h2
             style={{ y: titleY, opacity: titleOpacity }}
-            className="font-serif text-[clamp(4rem,10vw,9rem)] leading-[0.82] text-deep"
+            className="font-serif text-[clamp(4rem,10vw,9rem)] leading-[0.82] text-[#efe9df]"
           >
             Join the
             <br />
@@ -89,14 +89,14 @@ export default function HomeNewsletterSplit() {
           </motion.h2>
           <motion.div
             style={{ scaleX: ruleScale }}
-            className="mt-9 h-px w-40 origin-left bg-gold/55"
+            className="mt-9 h-px w-40 origin-left bg-[#90844a]"
           />
-          <p className="mt-8 max-w-md font-sans text-base leading-relaxed text-[#5F6648]">
+          <p className="mt-8 max-w-md font-sans text-base leading-relaxed text-[#efe9df]/72">
             {t.newsletter.body}
           </p>
         </div>
 
-        <div className="reveal rounded-[40px] bg-[#F4F1E8] p-[clamp(1rem,2vw,1.5rem)] shadow-[0_24px_70px_rgba(26,32,16,0.08)]">
+        <div className="reveal rounded-[40px] border border-[#efe9df]/15 bg-[#efe9df]/8 p-[clamp(1rem,2vw,1.5rem)] shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
               {subscriptionCards.map((card) => {

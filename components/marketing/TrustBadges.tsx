@@ -23,13 +23,13 @@ const badges = [
 
 export default function TrustBadges() {
   return (
-    <section className="soft-paper bg-eucalyptus px-6 py-20">
+    <section className="soft-paper bg-[#efe9df] px-6 py-20 text-[#444f26]">
       <div className="mx-auto mb-12 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-end">
         <div>
-          <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-deep/60">Trust standards</p>
-          <h2 className="font-serif text-5xl leading-tight text-deep md:text-6xl">Built with restraint</h2>
+          <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-[#90844a]">Trust standards</p>
+          <h2 className="font-serif text-5xl leading-tight text-[#444f26] md:text-6xl">Built with restraint</h2>
         </div>
-        <p className="max-w-xl font-sans text-sm leading-relaxed text-deep/72">
+        <p className="max-w-xl font-sans text-sm leading-relaxed text-[#444f26]/72">
           Trust is designed into the experience: careful language, privacy-aware forms, mature education, and a visual system that feels discreet rather than clinical.
         </p>
       </div>
@@ -37,13 +37,13 @@ export default function TrustBadges() {
         {badges.map((badge, index) => (
           <div
             key={badge.title}
-            className={`border border-deep/10 p-8 ${
-              index === 0 || index === 3 ? "bg-cream" : index === 2 ? "bg-pale-gold/45" : "bg-eucalyptus/55"
+            className={`rounded-3xl border p-8 shadow-[0_20px_60px_rgba(35,38,24,0.10)] ${
+              index === 0 || index === 3 ? "border-[#90844a]/20 bg-[#f8f3ea]" : index === 2 ? "border-[#90844a]/25 bg-[#90844a]/12" : "border-[#90844a]/20 bg-[#f8f3ea]"
             }`}
           >
-            <span className="mb-8 block h-px w-12 bg-gold/55" />
-            <h3 className="mb-3 font-sans text-xl text-deep">{badge.title}</h3>
-            <p className="font-sans text-sm leading-relaxed text-deep/70">{badge.body}</p>
+            <span className="mb-8 block h-px w-12 bg-[#90844a]/55" />
+            <h3 className="mb-3 font-sans text-xl text-[#444f26]">{badge.title}</h3>
+            <p className="font-sans text-sm leading-relaxed text-[#444f26]/70">{badge.body}</p>
           </div>
         ))}
       </div>
