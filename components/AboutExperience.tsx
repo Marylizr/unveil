@@ -68,7 +68,7 @@ export default function AboutExperience() {
           </div>
           <div className="grid grid-cols-1 gap-[clamp(1rem,2vw,1.5rem)] md:grid-cols-2">
             {t.about.values.map((value, index) => (
-              <div key={value.title} className="rounded-3xl border border-[#efe9df]/15 bg-[#efe9df]/8 p-[clamp(1.5rem,3vw,2.5rem)] text-[#efe9df] shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+              <div key={value.title} className="rounded-3xl border border-[#efe9df]/20 bg-[#2a3705] p-[clamp(1.5rem,3vw,2.5rem)] text-[#efe9df] shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
                 <span className="mb-6 block font-sans text-xs uppercase tracking-[0.3em] text-[#90844a]">0{index + 1}</span>
                 <h3 className="mb-3 font-sans text-2xl leading-tight text-[#efe9df]">{value.title}</h3>
                 <p className="font-sans text-sm leading-relaxed text-[#efe9df]/72">{value.desc}</p>

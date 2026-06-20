@@ -15,25 +15,6 @@ const PRODUCT_TYPES: Array<{ label: string; value: ProductType | "all" }> = [
   { label: "Service", value: "service" },
 ];
 
-const catalogSignals = [
-  {
-    title: "Editorial shop surface",
-    imageUrl: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781348990/editorial-shop-surface_rxhfmv.webp",
-  },
-  {
-    title: "Protected backoffice",
-    imageUrl: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781349326/protected-backoffice_a3aueq.webp",
-  },
-  {
-    title: "Structured catalog logic",
-    imageUrl: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781349465/structured-cataloglogic_h4pn1y.webp",
-  },
-  {
-    title: "Conversion path",
-    imageUrl: "https://res.cloudinary.com/dnaq4a9do/image/upload/v1781349682/convertion-path_jfbc4p.webp",
-  },
-];
-
 export default function ProductCatalogExperience() {
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState("all");
@@ -73,29 +54,6 @@ export default function ProductCatalogExperience() {
             Educational tools, digital guides, grooming resources, and wellness essentials selected to support body literacy before purchase.
           </p>
         </header>
-
-        <section className="mb-16 grid grid-cols-1 gap-4 md:grid-cols-4" aria-label="UNVEIL catalog system preview">
-          {catalogSignals.map((signal) => (
-            <article
-              key={signal.title}
-              className="group overflow-hidden rounded-[28px] border border-[#efe9df]/15 bg-[#efe9df]/8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]"
-            >
-              <div className="aspect-[4/3] overflow-hidden bg-[#232618]/40">
-                <img
-                  src={signal.imageUrl}
-                  alt={`${signal.title} by UNVEIL`}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-5">
-                <span className="mb-4 block h-px w-10 bg-[#90844a]/70 transition-all duration-500 group-hover:w-16" />
-                <h2 className="font-sans text-sm uppercase tracking-widest text-[#efe9df]">{signal.title}</h2>
-              </div>
-            </article>
-          ))}
-        </section>
 
         {status === "loading" && (
           <div className="border border-[#efe9df]/15 bg-[#efe9df]/8 p-10 font-sans text-sm text-[#efe9df]/75">Preparing the resource catalog.</div>

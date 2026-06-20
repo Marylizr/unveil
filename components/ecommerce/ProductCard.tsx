@@ -24,7 +24,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const imageAlt = image?.alt || `${title} by UNVEIL`;
 
   return (
-    <Link href={`/products/${product.slug}`} className="block">
+    <Link href={`/products/${product.slug}`} className="block h-full">
       <motion.article
         data-unveil-card
         initial={shouldReduceMotion ? false : { opacity: 1, y: 18, scale: 0.992 }}
@@ -32,7 +32,7 @@ export default function ProductCard({ product }: { product: Product }) {
         whileHover={shouldReduceMotion ? undefined : { y: -4 }}
         viewport={{ once: true, amount: 0.22 }}
         transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-        className="product-card group overflow-hidden rounded-[28px] border border-[rgba(77,80,57,0.18)] bg-[#F4F1E8] text-deep transition-colors duration-300 hover:border-gold/45"
+        className="product-card group flex h-full flex-col overflow-hidden rounded-[28px] border border-[rgba(77,80,57,0.18)] bg-[#F4F1E8] text-deep transition-colors duration-300 hover:border-gold/45"
       >
       <div className="relative aspect-[4/5] overflow-hidden bg-stone/35">
         <img
@@ -50,7 +50,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
         <span className="absolute bottom-4 left-4 h-px w-12 origin-left scale-x-50 bg-gold/60 transition-transform duration-700 group-hover:scale-x-100" />
       </div>
-      <div className="p-6">
+      <div className="flex flex-1 flex-col p-6">
         <p className="mb-2 font-sans text-[10px] uppercase tracking-widest text-olive/70">
           {product.category} · {product.productType}
         </p>
@@ -59,7 +59,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {title}
         </h3>
         <p className="mb-5 line-clamp-2 font-sans text-sm leading-relaxed text-olive/78">{description}</p>
-        <div className="flex items-center justify-between gap-4">
+        <div className="mt-auto flex items-center justify-between gap-4">
           <span className="font-sans text-sm text-deep">{formatPrice(product)}</span>
           <span className="font-sans text-[10px] uppercase tracking-widest text-olive/65">
             {product.stockStatus.replace(/_/g, " ")}

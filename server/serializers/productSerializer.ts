@@ -1,4 +1,5 @@
 import type { IProduct } from "../../models/Product";
+import { toPlainSerializedValue } from "./plain";
 
 export function serializeProduct(product: IProduct) {
   const data = product.toObject ? product.toObject() : product;
@@ -16,7 +17,7 @@ export function serializeProduct(product: IProduct) {
     ...publicProduct
   } = data as Record<string, unknown>;
 
-  return {
+  return toPlainSerializedValue({
     ...publicProduct,
     name: publicProduct.title,
     description: publicProduct.shortDescription,
@@ -26,9 +27,9 @@ export function serializeProduct(product: IProduct) {
         : "",
     tag: Array.isArray(publicProduct.tags) ? publicProduct.tags[0] || "" : "",
     inStock: publicProduct.stockStatus !== "out_of_stock",
-  };
+  });
 }
 
 export function serializeAdminProduct(product: IProduct) {
-  return product.toObject ? product.toObject() : product;
+  return toPlainSerializedValue(product.toObject ? product.toObject() : product);
 }

@@ -48,7 +48,7 @@ export default function WhatUnveilTeaches() {
               whileHover={shouldReduceMotion ? undefined : { y: -4 }}
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.72, delay: shouldReduceMotion ? 0 : index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              className="group flex min-h-[280px] flex-col rounded-3xl border border-[#efe9df]/15 bg-[#efe9df]/8 p-[clamp(1.5rem,3vw,2.5rem)] text-[#efe9df] shadow-[0_24px_80px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:border-[#90844a]/55"
+              className="group flex min-h-[280px] flex-col rounded-3xl border border-[#efe9df]/15 bg-[#162517] p-[clamp(1.5rem,3vw,2.5rem)] text-[#efe9df] shadow-[0_24px_80px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:border-[#90844a]/55"
             >
               <span className="mb-8 block font-sans text-5xl font-semibold leading-none text-[#efe9df]/70 transition-transform duration-500 group-hover:-translate-y-1">
                 0{index + 1}
@@ -56,7 +56,7 @@ export default function WhatUnveilTeaches() {
               <h3 className="mb-3 font-sans text-2xl leading-tight text-[#efe9df]">{topic.title}</h3>
               <p className="font-sans text-sm leading-relaxed text-[#efe9df]/72">{topic.body}</p>
               <span className="mt-auto block pt-8">
-                <span className="block h-px w-10 bg-[#90844a]/55 transition-all duration-500 group-hover:w-20 group-hover:bg-[#90844a]" />
+                <span className="block h-px w-10 bg-[#162517]/55 transition-all duration-500 group-hover:w-20 group-hover:bg-[#90844a]" />
               </span>
             </motion.article>
           ))}
